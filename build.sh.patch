@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# build.sh 실행 권한 패치 적용 기준 파일
+# 실제 build.sh 내용은 변경하지 않습니다.
