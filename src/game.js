@@ -40,7 +40,7 @@ const issueUnlocked=i=>i===0||!!S.unlockAll||(S.mdone['i'+(i-1)]||0)>=halfNeed(i
 function genMission(i,m){
   if(m%5===4)return {t:'boss',label:`보스 격파 — ${ISSUES[i].bosses[Math.floor(m/5)]}`,n:1,bossIdx:Math.floor(m/5)};
   const k=m%4; const tt=MISSION_TYPES[k];
-  const n=[400+110*m+300*i, 25+7*m+18*i, 6+2*m+5*i, 4+m+2*i][k];
+  const n=[400+110*m+300*i, 25+7*m+18*i, Math.ceil((6+2*m+5*i)/4), 4+m+2*i][k];
   return {t:tt.t,label:tt.label(n),n};
 }
 
@@ -375,14 +375,14 @@ function togglePause(){ if(!R||R.over||R.dead)return; R.paused=!R.paused; $('#ov
 window.addEventListener('keydown',e=>{ if(!R)return; const k=e.key;
   if(['ArrowLeft','a','A'].includes(k)){laneMove(-1);e.preventDefault();}
   else if(['ArrowRight','d','D'].includes(k)){laneMove(1);e.preventDefault();}
-  else if(['ArrowUp','w','W'].includes(k)){ if(!e.repeat){doJump();tapAction();} holding=true; e.preventDefault(); }
+  else if(['ArrowUp','w','W'].includes(k)){ if(!e.repeat){doJump();tapAction();if(R.seg==='swing')SFX.play('web');} holding=true; e.preventDefault(); }
   else if(['ArrowDown','s','S'].includes(k)){doSlide();e.preventDefault();}
-  else if(k===' '||k==='Enter'){ if(!e.repeat){doJump();tapAction();} holding=true; e.preventDefault(); }
+  else if(k===' '||k==='Enter'){ if(!e.repeat){doJump();tapAction();if(R.seg==='swing')SFX.play('web');} holding=true; e.preventDefault(); }
   else if(k==='Escape'||k==='p'||k==='P'){togglePause();}
 });
 window.addEventListener('keyup',e=>{ if(e.key===' '||e.key==='Enter'||e.key==='ArrowUp'||e.key==='w'||e.key==='W')holding=false; });
 let tS=null;
-cv.addEventListener('pointerdown',e=>{tS={x:e.clientX,y:e.clientY,t:performance.now(),moved:false};holding=true;cv.setPointerCapture(e.pointerId); if(isTouch&&R&&!gyroOK)requestGyro();});
+cv.addEventListener('pointerdown',e=>{tS={x:e.clientX,y:e.clientY,t:performance.now(),moved:false};holding=true;if(R&&R.seg==='swing')SFX.play('web');cv.setPointerCapture(e.pointerId); if(isTouch&&R&&!gyroOK)requestGyro();});
 const isTouch=matchMedia('(pointer:coarse)').matches;
 cv.addEventListener('mousemove',e=>{ if(isTouch||!R)return; const r=cv.getBoundingClientRect(); freeTarget=((e.clientX-r.left)/r.width-0.5)*2*1.45; });
 // 화면 방향에 맞춰 좌우 기울기를 뽑아낸다 (폰 세로 / 패드 가로 모두 대응)
@@ -415,7 +415,7 @@ $('#bResume').onclick=togglePause; $('#bQuit').onclick=()=>{R.paused=false;$('#o
 // 업데이트
 function update(dt){
   R.t+=dt; if(R.dead)return;
-  R.speed=Math.min(28*R.mods.speedMul,(13+R.dist/220)*R.mods.speedMul)*(R.uniT>0?1.3:1); if(R.mods.shieldRegen){ R.regenT-=dt; if(R.regenT<=0){R.regenT=R.mods.shieldRegen;R.shields++;toast('SHIELD +1');SFX.play('coin');} } const vz=R.speed*dt; R.dist+=vz*2.2; R.score+=vz*2.2*5*(1+teamMult(0)*0.1)*R.mods.distMul;
+  R.speed=Math.min(28*R.mods.speedMul,(13+R.dist/880)*R.mods.speedMul)*(R.uniT>0?1.3:1); if(R.mods.shieldRegen){ R.regenT-=dt; if(R.regenT<=0){R.regenT=R.mods.shieldRegen;R.shields++;toast('SHIELD +1');SFX.play('coin');} } const vz=R.speed*dt; R.dist+=vz*2.2; R.score+=vz*2.2*5*(1+teamMult(0)*0.1)*R.mods.distMul;
   R.inv=Math.max(0,R.inv-dt); R.shake=Math.max(0,R.shake-dt); R.comboT-=dt; if(R.comboT<=0&&R.combo>0){R.combo=Math.floor(R.combo/2);R.comboT=3;}
   R.bgOff+=vz*3;
   // 플레이어 위치
