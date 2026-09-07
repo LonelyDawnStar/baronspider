@@ -11,10 +11,10 @@ const ENERGY_MAX=5, ENERGY_MS=3*60*1000;
 
 let S=null;
 function fresh(){
-  return {vials:1500,iso:60,energy:5,energyAt:now(),owned:{classic:{lv:1,xp:0,dup:0,rk:0},mangaverse:{lv:1,xp:0,dup:0,rk:0}},team:['classic','mangaverse'],
+  return {vials:1500,iso:60,energy:5,energyAt:now(),owned:{classic:{lv:1,xp:0,dup:0,rk:0},mangaverse:{lv:1,xp:0,dup:0,rk:0}},team:['classic','mangaverse',null],
     issue:0,mission:0,done:[0,0,0,0,0,0],mdone:{},unl:{date:'',best:0,claimed:[]},event:{key:-1,best:0,claimed:[]},ops:[null,null,null],daily:{date:'',runs:0,dist:0,vials:0,enemies:0,bosses:0,claimed:[]},continues:0,stats:{runs:0,best:0,bossKills:0}};
 }
-function load(){try{const j=localStorage.getItem(SAVE_KEY);if(j){S=Object.assign(fresh(),JSON.parse(j));}}catch(e){} if(!S)S=fresh(); tickEnergy();}
+function load(){try{const j=localStorage.getItem(SAVE_KEY);if(j){S=Object.assign(fresh(),JSON.parse(j));}}catch(e){} if(!S)S=fresh(); normTeam(); tickEnergy();}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 function tickEnergy(){ if(S.energy>=ENERGY_MAX){S.energyAt=now();return;} const el=now()-S.energyAt; const g=Math.floor(el/ENERGY_MS); if(g>0){S.energy=Math.min(ENERGY_MAX,S.energy+g);S.energyAt=S.energy>=ENERGY_MAX?now():S.energyAt+g*ENERGY_MS;} }
 function dailyCheck(){const t=todayKey(); if(S.daily.date!==t){S.daily={date:t,runs:0,dist:0,vials:0,enemies:0,bosses:0,claimed:[]};} if(S.unl.date!==t){S.unl={date:t,best:0,claimed:[]};} const wk=Math.floor(now()/864e5/7); if(S.event.key!==wk){S.event={key:wk,best:0,claimed:[]};}}
@@ -23,14 +23,20 @@ function dailyCheck(){const t=todayKey(); if(S.daily.date!==t){S.daily={date:t,r
 const stars=id=>Math.min(8,RARITY[CH[id].r].stars+(S.owned[id]?.rk||0));
 const cap=id=>RARITY[CH[id].r].cap+(S.owned[id]?.rk||0)*10;
 const power=id=>{const o=S.owned[id];if(!o)return 0;return o.lv/10+(RARITY[CH[id].r].stars-1)/2+(o.rk||0)*0.5;};
-const teamPower=()=>S.team.reduce((a,id)=>a+power(id),0);
+function normTeam(){ if(!Array.isArray(S.team))S.team=[]; S.team=[0,1,2].map(i=>{const id=S.team[i]; return (id&&CH[id]&&S.owned[id])?id:null;}); }
+const teamIds=()=>S.team.filter(Boolean);
+const leadId=()=>S.team.find(Boolean)||null;
+const teamFull=()=>teamIds().length>=3;
+const freeSlot=()=>S.team.indexOf(null);
+const teamPower=()=>teamIds().reduce((a,id)=>a+power(id),0);
 const tierName=p=>{let n=TIERS[0][1];for(const [v,t] of TIERS)if(p>=v)n=t;return n;};
 const xpNeed=lv=>100+lv*45;
 function addXp(id,xp){const o=S.owned[id];if(!o)return;o.xp+=xp;while(o.lv<cap(id)&&o.xp>=xpNeed(o.lv)){o.xp-=xpNeed(o.lv);o.lv++;} if(o.lv>=cap(id))o.xp=Math.min(o.xp,xpNeed(o.lv)-1);}
-const teamMult=i=>S.team.reduce((a,id)=>a+CH[id].m[i],0); // 가산 배율 (0=score,1=combo,2=dist,3=vials,4=enemies,5=bosses)
+const teamMult=i=>teamIds().reduce((a,id)=>a+CH[id].m[i],0); // 가산 배율 (0=score,1=combo,2=dist,3=vials,4=enemies,5=bosses)
 const inOps=id=>S.ops.some(o=>o&&o.chars.includes(id));
-function leaderMods(){ const c=CH[S.team[0]]; const base={vialMul:1,scoreMul:1,comboHold:0,shields:0,revives:0,magnet:0,bombDmg:1,zipRange:1,telMul:1,sense:0,comboStart:0,xpMul:1,isoLuck:1,sturdy:0,killMul:1,killCombo:0,speedMul:1,distMul:1,tapTime:0,escTime:0,shieldRegen:0,noProj:0,slideFly:0};
+function leaderMods(){ const lid=leadId(); const base={vialMul:1,scoreMul:1,comboHold:0,shields:0,revives:0,magnet:0,bombDmg:1,zipRange:1,telMul:1,sense:0,comboStart:0,xpMul:1,isoLuck:1,sturdy:0,killMul:1,killCombo:0,speedMul:1,distMul:1,tapTime:0,escTime:0,shieldRegen:0,noProj:0,slideFly:0};
   const add=m=>{ for(const k in m){ if(k==='vialMul'||k==='scoreMul'||k==='xpMul'||k==='killMul'||k==='speedMul'||k==='distMul'||k==='zipRange'||k==='telMul'||k==='isoLuck')base[k]=Math.max(base[k],1)*m[k]; else if(k==='bombDmg')base[k]+=m[k]-1; else if(k==='titan')base.titan=m[k]; else base[k]=(base[k]||0)+m[k]; } };
+  if(!lid)return base; const c=CH[lid];
   add(RANK_TRAITS[c.r].mods); add(abilityOf(c).mods); return base; }
 
 // ===== 미션 생성 =====
@@ -70,8 +76,12 @@ function renderStory(){
    <div class="ms">${Array.from({length:total},(_,k)=>{const pr=S.mdone['i'+S.issue]||0; const cls=(k<pr?'done':'')+(k===m?' cur':'')+(k%5===4?' b':'')+(k<=pr?' pick':''); return `<span class="${cls}" data-m="${k}" title="${k<pr?'클리어 — 다시 플레이':k===pr?'현재 미션':'잠김'}">${k%5===4?'B':k+1}</span>`;}).join('')}</div>
    <div class="obj">미션 ${m+1}/${total} — <b>${ms.label}</b>${replay?' <span style="color:var(--muted);font-size:12px">(재도전 — 진행도에 영향 없음)</span>':''}${S.mission>=total?' <span style="color:var(--green)">(이슈 완료 · 재도전)</span>':''}</div>`;
   $('#missionBox').querySelectorAll('.ms span.pick').forEach(sp=>{ sp.style.cursor='pointer'; sp.onclick=()=>{ S.mission=+sp.dataset.m; save(); renderStory(); }; });
-  { const lead=CH[S.team[0]]; const o=S.owned[S.team[0]]; const tier=tierName(tp); const v={dist:'거리',vials:'바이알',enemies:'적 처치',combo:'콤보',boss:'보스'}[ms.t];
-    $('#heroCard').innerHTML=`<div class="hero">
+  { const lid=leadId(); const lead=lid?CH[lid]:null; const o=lid?S.owned[lid]:null; const tier=tierName(tp); const v={dist:'거리',vials:'바이알',enemies:'적 처치',combo:'콤보',boss:'보스'}[ms.t];
+    if(!lead){ $('#heroCard').innerHTML=`<div class="hero"><div class="por" style="display:grid;place-items:center;min-height:100px;font-family:var(--disp);font-weight:900;font-size:40px;color:var(--dim)">?</div>
+      <div class="info"><div class="eyebrow">ISSUE #${is.n} · ${is.title}</div><h3 style="color:var(--redink)">팀이 비어 있습니다</h3>
+      <div class="goal">출격 불가 — <b>컬렉션</b> 탭에서 팀에 스파이더를 배치하세요</div>
+      <div class="meta">에너지 ${S.energy}/${ENERGY_MAX}</div></div></div>`; }
+    else $('#heroCard').innerHTML=`<div class="hero">
       <div class="por">${avatarSVG(lead,84,100)}<div class="rar" style="color:${RARITY[lead.r].color}">${RARITY[lead.r].name}</div></div>
       <div class="info">
         <div class="eyebrow">ISSUE #${is.n} · ${is.title}</div>
@@ -79,11 +89,14 @@ function renderStory(){
         <div class="goal">${ms.t==='boss'?'BOSS':v} — <b>${ms.label.replace(/^보스 격파 — /,'')}</b></div>
         <div class="pbar"><i style="width:${(S.mdone['i'+S.issue]||0)/total*100}%"></i></div>
         <div class="meta">챕터 진행 ${S.mdone['i'+S.issue]||0}/${total}${replay?' · 재도전 중':''} · 에너지 ${S.energy}/${ENERGY_MAX}</div>
-        <div class="crew">${S.team.map(id=>`<div class="m">${avatarSVG(CH[id],22,26)}<span>${CH[id].name}</span></div>`).join('')}<div class="pw2">P ${tp.toFixed(1)} · ${tier}</div></div>
+        <div class="crew">${teamIds().map(id=>`<div class="m">${avatarSVG(CH[id],22,26)}<span>${CH[id].name}</span></div>`).join('')}<div class="pw2">P ${tp.toFixed(1)} · ${tier}</div></div>
         <div class="lead2">${RANK_TRAITS[lead.r].label} · ${abilityOf(lead).name}</div>
       </div></div>`; }
-  $('#bRun').disabled=S.energy<1; $('#bUnl2').disabled=S.energy<1;
-  $('#bRun').querySelector('span').textContent=S.energy<1?'에너지 부족':(ms.t==='boss'?'▶ 보스전 시작':'▶ 미션 시작');
+  const noTeam=!leadId();
+  $('#bRun').disabled=S.energy<1||noTeam; $('#bUnl2').disabled=S.energy<1||noTeam;
+  $('#bRun').querySelector('span').textContent=noTeam?'팀 편성 필요':(S.energy<1?'에너지 부족':(ms.t==='boss'?'▶ 보스전 시작':'▶ 미션 시작'));
+  { const u=$('#bUnl2').querySelector('span'); if(u&&!u.dataset.base)u.dataset.base=u.textContent; if(u)u.textContent=noTeam?'팀 편성 필요':u.dataset.base; }
+  { const a=$('#bStart'),b=$('#bUnl'); if(a)a.disabled=noTeam; if(b)b.disabled=noTeam; }
   renderDaily();
 }
 function renderDaily(){
@@ -98,13 +111,96 @@ function renderDaily(){
 
 // ===== 렌더: 팀 =====
 function renderTeam(){
+  normTeam();
   const tp=teamPower(); $('#teamPower').textContent=tp.toFixed(1); $('#teamTier').textContent=tierName(tp);
-  $('#team').innerHTML=[0,1,2].map(i=>{const id=S.team[i]; if(!id)return `<button class="slot">빈 슬롯 — 컬렉션에서 카드를 선택하세요 (클릭하면 컬렉션으로)</button>`; const c=CH[id],o=S.owned[id];
-    return `<button class="slot filled" data-id="${id}">${avatarSVG(c,44,52)}<div><div class="name">${i===0?'▶ ':''}${c.name}</div><div class="meta">${RARITY[c.r].name} · Lv.${o.lv}/${cap(id)} · P ${power(id).toFixed(1)}</div><div class="meta" style="color:var(--amber)">${multStr(c)}</div>${i===0?`<div class="meta" style="color:var(--redink);font-weight:700">${RANK_TRAITS[c.r].label} · ${abilityOf(c).name}</div>`:''}</div></button>`;}).join('');
-  $('#team').querySelectorAll('.slot.filled').forEach(b=>b.onclick=()=>openCard(b.dataset.id));
-  $('#team').querySelectorAll('.slot:not(.filled)').forEach(b=>b.onclick=()=>{ $('#nav [data-p="collection"]').click(); });
+  const lid=leadId();
+  $('#team').innerHTML=[0,1,2].map(i=>{const id=S.team[i];
+    if(!id)return `<div class="slot" data-i="${i}"><span class="no">${i+1}</span><div style="padding-left:2px">빈 슬롯<br><span style="font-size:11px">아래 카드를 끌어다 놓으세요</span></div></div>`;
+    const c=CH[id],o=S.owned[id]; const isLead=id===lid;
+    return `<div class="slot filled${isLead?' lead':''}" data-i="${i}" data-id="${id}"><span class="no">${isLead?'LEAD':i+1}</span>${avatarSVG(c,44,52)}<div><div class="name">${isLead?'▶ ':''}${c.name}</div><div class="meta">${RARITY[c.r].name} · Lv.${o.lv}/${cap(id)} · P ${power(id).toFixed(1)}</div><div class="meta" style="color:var(--amber)">${multStr(c)}</div>${isLead?`<div class="meta" style="color:var(--redink);font-weight:700">${RANK_TRAITS[c.r].label} · ${abilityOf(c).name}</div>`:''}</div></div>`;}).join('');
+  const n=teamIds().length;
+  $('#teamHint').innerHTML=n?`편성 ${n}/3 · 가장 앞선 슬롯이 <b>리더</b>가 되어 특성·능력을 발동합니다. 러닝에 참가한 카드 전원이 경험치를 얻습니다.`
+    :`<b style="color:var(--redink)">팀이 비어 있어 출격할 수 없습니다.</b> 카드를 슬롯으로 끌어다 놓으세요.`;
+  bindTeamDrag();
 }
 const multStr=c=>EVENT_CATS.map((e,i)=>c.m[i]?`${e[1]} +${c.m[i]}×`:'').filter(Boolean).join(' · ');
+
+// ===== 팀 편성 드래그 (마우스 · 터치 공용) =====
+const DRAG={active:false,armed:false,src:null,id:null,x0:0,y0:0,ghost:null,over:null,suppress:false};
+function dragGhost(id){
+  const g=document.createElement('div'); g.id='dragGhost';
+  g.innerHTML=avatarSVG(CH[id],30,36)+`<span>${CH[id].name}</span>`;
+  document.body.appendChild(g); return g;
+}
+function dragMoveGhost(x,y){ if(DRAG.ghost){DRAG.ghost.style.left=x+'px'; DRAG.ghost.style.top=y+'px';} }
+function dragHit(x,y){
+  const el=document.elementFromPoint(x,y); if(!el)return null;
+  const slot=el.closest('#team .slot'); if(slot)return slot;
+  const out=el.closest('#teamOut'); if(out)return out;
+  return null;
+}
+function dragOver(t){
+  if(DRAG.over===t)return;
+  if(DRAG.over)DRAG.over.classList.remove('drop');
+  DRAG.over=t; if(t)t.classList.add('drop');
+}
+function dragBegin(id,srcEl){
+  DRAG.active=true; DRAG.id=id; DRAG.ghost=dragGhost(id);
+  document.body.classList.add('dragging'); srcEl.classList.add('drag-src');
+  try{SFX.play('tab');}catch(e){}
+}
+function dragEnd(apply){
+  if(DRAG.ghost){DRAG.ghost.remove(); DRAG.ghost=null;}
+  if(DRAG.over)DRAG.over.classList.remove('drop');
+  document.body.classList.remove('dragging');
+  document.querySelectorAll('.drag-src').forEach(e=>e.classList.remove('drag-src'));
+  const tgt=DRAG.over, id=DRAG.id, from=DRAG.src;
+  DRAG.active=false; DRAG.armed=false; DRAG.over=null; DRAG.id=null; DRAG.src=null;
+  DRAG.suppress=true; setTimeout(()=>{DRAG.suppress=false;},0);
+  if(!apply||!id)return;
+  const cur=S.team.indexOf(id);
+  if(tgt&&tgt.id==='teamOut'){ if(cur>=0){S.team[cur]=null; toast(CH[id].name+' 제외'); commitTeam();} return; }
+  if(tgt&&tgt.classList.contains('slot')){
+    const j=+tgt.dataset.i;
+    if(cur===j)return;
+    if(cur>=0){ const t=S.team[j]; S.team[j]=id; S.team[cur]=t; }
+    else { if(inOps(id)){toast('옵스 임무 중인 카드입니다');return;} S.team[j]=id; }
+    toast(CH[id].name+' → 슬롯 '+(j+1)); commitTeam(); return;
+  }
+  // 팀 슬롯에서 아무 데나 놓으면 제외
+  if(from==='team'&&cur>=0){ S.team[cur]=null; toast(CH[id].name+' 제외'); commitTeam(); }
+}
+function commitTeam(){ normTeam(); save(); try{SFX.play('coin');}catch(e){} renderAll(); }
+function dragAttach(el,id,src){
+  el.addEventListener('pointerdown',e=>{
+    if(e.button!==undefined&&e.button!==0)return;
+    if(DRAG.active)return;
+    DRAG.armed=true; DRAG.src=src; DRAG.id=id; DRAG.x0=e.clientX; DRAG.y0=e.clientY; DRAG.el=el; DRAG.suppress=false;
+  });
+}
+window.addEventListener('pointermove',e=>{
+  if(!DRAG.armed)return;
+  if(!DRAG.active){
+    if(Math.hypot(e.clientX-DRAG.x0,e.clientY-DRAG.y0)<7)return;
+    dragBegin(DRAG.id,DRAG.el); DRAG.suppress=true;
+  }
+  e.preventDefault();
+  dragMoveGhost(e.clientX,e.clientY);
+  dragOver(dragHit(e.clientX,e.clientY));
+},{passive:false});
+window.addEventListener('pointerup',e=>{ if(DRAG.active){dragOver(dragHit(e.clientX,e.clientY)); dragEnd(true);} else {DRAG.armed=false;DRAG.src=null;DRAG.id=null;} });
+window.addEventListener('pointercancel',()=>{ if(DRAG.active)dragEnd(false); else DRAG.armed=false; });
+
+function bindTeamDrag(){
+  $('#team').querySelectorAll('.slot').forEach(el=>{
+    const id=el.dataset.id;
+    if(id){ dragAttach(el,id,'team'); el.onclick=()=>{ if(DRAG.suppress){DRAG.suppress=false;return;} openCard(id); }; }
+    else el.onclick=()=>{ const c=$('#cards'); if(c)c.scrollIntoView({behavior:'smooth',block:'start'}); };
+  });
+}
+function bindCardDrag(){
+  $('#cards').querySelectorAll('.card[data-own]').forEach(el=>dragAttach(el,el.dataset.id,'card'));
+}
 
 // ===== 렌더: 컬렉션 =====
 let filter='all';
@@ -114,8 +210,9 @@ function renderCards(){
   $('#filters').innerHTML=fs.map(([k,l])=>`<button class="${filter===k?'on':''}" data-f="${k}">${l}</button>`).join('');
   $('#filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;renderCards();});
   const list=CHARS.filter(c=>filter==='all'||(filter==='own'?S.owned[c.id]:c.r===filter)).sort((a,b)=>(S.owned[b.id]?1:0)-(S.owned[a.id]?1:0)||RARITY[b.r].stars-RARITY[a.r].stars);
-  $('#cards').innerHTML=list.map(c=>{const o=S.owned[c.id]; return `<button class="card ${o?'':'locked'} ${S.team.includes(c.id)?'inteam':''}" data-id="${c.id}" style="border-color:${o?RARITY[c.r].color+'88':''}">${o&&o.dup?`<span class="dup">+${o.dup}</span>`:''}${avatarSVG(c)}<div class="nm">${c.name}</div><div class="stars" style="color:${RARITY[c.r].color}">${starStr(o?stars(c.id):RARITY[c.r].stars)}</div><div class="lv">${o?`Lv.${o.lv}`:RARITY[c.r].name}</div></button>`;}).join('');
-  $('#cards').querySelectorAll('.card').forEach(b=>b.onclick=()=>openCard(b.dataset.id));
+  $('#cards').innerHTML=list.map(c=>{const o=S.owned[c.id]; return `<button class="card ${o?'':'locked'} ${S.team.includes(c.id)?'inteam':''}" data-id="${c.id}" ${o?'data-own="1"':''} style="border-color:${o?RARITY[c.r].color+'88':''}">${o&&o.dup?`<span class="dup">+${o.dup}</span>`:''}${avatarSVG(c)}<div class="nm">${c.name}</div><div class="stars" style="color:${RARITY[c.r].color}">${starStr(o?stars(c.id):RARITY[c.r].stars)}</div><div class="lv">${o?`Lv.${o.lv}`:RARITY[c.r].name}</div></button>`;}).join('');
+  $('#cards').querySelectorAll('.card').forEach(b=>b.onclick=()=>{ if(DRAG.suppress){DRAG.suppress=false;return;} openCard(b.dataset.id); });
+  bindCardDrag();
 }
 function openCard(id){
   const c=CH[id],o=S.owned[id]; const dlg=$('#dlg'); const inTeam=S.team.includes(id); const st=o?stars(id):RARITY[c.r].stars;
@@ -125,8 +222,8 @@ function openCard(id){
    <div class="kv" style="margin-top:2px"><span>등급 특성</span><b style="font-family:var(--body)">${RANK_TRAITS[c.r].label} — ${RANK_TRAITS[c.r].desc}</b><span>고유 능력</span><b style="font-family:var(--body);color:var(--redink)">${abilityOf(c).name} — ${abilityOf(c).desc}</b></div><p class="lead" style="font-size:11px">특성·능력은 이 카드가 팀 리더(1번)일 때 발동합니다.</p>
    <div class="mults">${EVENT_CATS.map((e,i)=>`<span class="${c.m[i]?'on':''}">${e[1]} ${c.m[i]?'+'+c.m[i]+'×':'—'}</span>`).join('')}</div>
    <div class="actions">
-    ${o?(inTeam?`<button class="btn sm ghost" id="dTeam">팀에서 제외</button>`:`<button class="btn sm cyan" id="dTeam" ${S.team.length>=3||inOps(id)?'disabled':''}>${inOps(id)?'옵스 임무 중':'팀에 추가'}</button>`):''}
-    ${o&&inTeam&&S.team[0]!==id?`<button class="btn sm ghost" id="dLead">리더로</button>`:''}
+    ${o?(inTeam?`<button class="btn sm ghost" id="dTeam">팀에서 제외</button>`:`<button class="btn sm cyan" id="dTeam" ${teamFull()||inOps(id)?'disabled':''}>${inOps(id)?'옵스 임무 중':'팀에 추가'}</button>`):''}
+    ${o&&inTeam&&leadId()!==id?`<button class="btn sm ghost" id="dLead">리더로</button>`:''}
     ${o?`<button class="btn sm ghost" id="dLv" ${S.vials<200*o.lv||o.lv>=cap(id)?'disabled':''}>바이알로 레벨업 (${fmt(200*o.lv)})</button>`:''}
     ${o?`<button class="btn sm amber" id="dRk" ${canRk?'':'disabled'}>랭크업 (중복 1 + ${fmt(rkCost.vials)} 바이알${rkCost.iso?` + ${rkCost.iso} ISO`:''})</button>`:''}
     <button class="btn sm ghost" id="dClose">닫기</button>
@@ -135,8 +232,8 @@ function openCard(id){
   </div>`;
   dlg.showModal();
   $('#dClose').onclick=()=>dlg.close();
-  const T=$('#dTeam'); if(T)T.onclick=()=>{if(inTeam){S.team=S.team.filter(x=>x!==id);}else S.team.push(id); if(!S.team.length){S.team=[id];} save();dlg.close();renderAll();};
-  const L=$('#dLead'); if(L)L.onclick=()=>{S.team=[id,...S.team.filter(x=>x!==id)];save();dlg.close();renderAll();};
+  const T=$('#dTeam'); if(T)T.onclick=()=>{ if(inTeam){const i=S.team.indexOf(id); if(i>=0)S.team[i]=null;} else {const f=freeSlot(); if(f<0){toast('빈 슬롯이 없습니다');return;} S.team[f]=id;} save();dlg.close();renderAll();};
+  const L=$('#dLead'); if(L)L.onclick=()=>{ const i=S.team.indexOf(id); if(i>0){const t=S.team[0];S.team[0]=id;S.team[i]=t;} save();dlg.close();renderAll();};
   const V=$('#dLv'); if(V)V.onclick=()=>{ const bar=dlg.querySelector('.xpbar i'); bar.style.width='100%'; SFX.play('levelup'); const lu=$('#dLvup'); lu.innerHTML='<span class="chrome gold">Level Up!</span>'; FX.retrig(lu,'on'); FX.sparks(dlg.querySelector('.dlg'),dlg.clientWidth/2,dlg.clientHeight*0.45,16); setTimeout(()=>{S.vials-=200*o.lv;o.lv++;o.xp=0;save();openCard(id);renderAll();},650); };
   const RK=$('#dRk'); if(RK)RK.onclick=()=>{ SFX.play('rankup'); const lu=$('#dLvup'); lu.innerHTML='<span class="chrome red">Rank Up!</span>'; FX.retrig(lu,'on'); FX.sparks(dlg.querySelector('.dlg'),dlg.clientWidth/2,dlg.clientHeight*0.3,28,RARITY[c.r].color); setTimeout(()=>{o.dup--;S.vials-=rkCost.vials;S.iso-=rkCost.iso;o.rk=(o.rk||0)+1;save();openCard(id);renderAll();},900); };
 }
@@ -163,7 +260,7 @@ function eventInfo(){const k=S.event.key;const cat=EVENT_CATS[k%6];const boss=EV
   return {cat,boss,reward,tiers:[[base*.5,'바이알 800'],[base,'ISO-8 15'],[base*2,`${reward.name} 카드`]]};}
 function renderEvent(){
   const e=eventInfo(); const mi=EVENT_CATS.findIndex(c=>c[0]===e.cat[0]); const m=teamMult(mi);
-  $('#evt').innerHTML=`<div><div style="font-size:11px;letter-spacing:.14em;color:var(--dim)">WEEKLY EVENT · #${S.event.key}</div><h3>${e.boss} 침공</h3><p class="lead" style="font-size:13px">카테고리 <b class="cat">${e.cat[1]}</b> · 이벤트 보스 <b>${e.boss}</b>가 러닝에 난입합니다. 현재 팀 배율 <b class="cat">×${1+m}</b> (가산: ${S.team.map(id=>CH[id].m[mi]?CH[id].name+' +'+CH[id].m[mi]:'').filter(Boolean).join(', ')||'없음'})</p><p class="lead" style="font-size:13px">내 기록 <b class="num" style="color:#fff">${fmt(S.event.best)}</b> — 스토리·언리미티드 어느 러닝이든 이벤트 점수로 집계됩니다.</p></div>
+  $('#evt').innerHTML=`<div><div style="font-size:11px;letter-spacing:.14em;color:var(--dim)">WEEKLY EVENT · #${S.event.key}</div><h3>${e.boss} 침공</h3><p class="lead" style="font-size:13px">카테고리 <b class="cat">${e.cat[1]}</b> · 이벤트 보스 <b>${e.boss}</b>가 러닝에 난입합니다. 현재 팀 배율 <b class="cat">×${1+m}</b> (가산: ${teamIds().map(id=>CH[id].m[mi]?CH[id].name+' +'+CH[id].m[mi]:'').filter(Boolean).join(', ')||'없음'})</p><p class="lead" style="font-size:13px">내 기록 <b class="num" style="color:#fff">${fmt(S.event.best)}</b> — 스토리·언리미티드 어느 러닝이든 이벤트 점수로 집계됩니다.</p></div>
    <div class="tiers">${e.tiers.map((t,i)=>{const got=S.event.best>=t[0];const cl=S.event.claimed.includes(i);return `<div class="${cl?'got':''}"><span class="num">${fmt(t[0])}</span><span>${t[1]}</span>${got&&!cl?`<button class="btn sm cyan" data-ec="${i}">수령</button>`:cl?'<span>✓</span>':''}</div>`;}).join('')}</div>`;
   $('#evt').querySelectorAll('[data-ec]').forEach(b=>b.onclick=()=>{const i=+b.dataset.ec;if(i===0)S.vials+=800;else if(i===1)S.iso+=15;else{gain(e.reward);toast(e.reward.name+' 획득!');}S.event.claimed.push(i);save();renderAll();});
   const ut=[[5000,5],[15000,12],[40000,30],[100000,80]];
@@ -239,11 +336,12 @@ let R=null,raf=0,keys={},holding=false,lastT=0;
 const rnd=(a,b)=>a+Math.random()*(b-a);
 
 function startRun(mode){
+  normTeam(); if(!leadId()){toast('팀에 스파이더를 배치해야 출격할 수 있습니다'); $('#nav [data-p="collection"]').click(); const tb=document.querySelector('.teambox'); if(tb){tb.scrollIntoView({behavior:'smooth',block:'center'}); FX.retrig(tb,'on');} return;}
   tickEnergy(); if(S.energy<1){toast('에너지 부족');return;}
   S.energy--; if(S.energy===ENERGY_MAX-1)S.energyAt=now(); dailyCheck(); S.daily.runs++; S.stats.runs++; save();
   const issue=mode==='story'?S.issue:Math.floor(Math.random()*6);
   const ms=mode==='story'?genMission(S.issue,Math.min(S.mission,missionCount(S.issue)-1)):null;
-  const lead=CH[S.team[0]]; const mods=leaderMods();
+  const lead=CH[leadId()]; const mods=leaderMods();
   R={mode,issue,ms,lead,mods,shields:mods.shields,revives:mods.revives,regenT:mods.shieldRegen||0,uniGauge:0,uniT:0,clones:[{alive:true,t:0},{alive:true,t:0}],tentCD:0,tentFx:null,t:0,dist:0,score:0,vials:0,iso:0,enemies:0,combo:0,maxCombo:0,comboT:0,bosses:0,bossSeen:0,
      speed:13,seg:'run',segLeft:70,segIdx:0,segEndZ:100,nextSeg:'swing',nextBoss:false,transT:0,prevSeg:'run',objs:[],spawnZ:ZF,lane:1,px:0,py:0,vy:0,state:'run',slideT:0,lastLaneT:0,prevLane:1,
      boss:null,dead:false,over:false,paused:false,inv:0,continues:0,objDone:false,shake:0,parts:[],bgOff:0,msg:'',msgT:0,fallSide:0,hazards:[],landT:0,wasJump:false};
@@ -326,7 +424,7 @@ function finish(ok,why){
   const mult=(1+teamPower()/50)*R.mods.scoreMul; R.score=Math.round(R.score*mult);
   S.vials+=Math.round(R.vials*(1+teamMult(3)*0.15)*R.mods.vialMul); S.iso+=R.iso; S.daily.dist+=R.dist; S.daily.vials+=R.vials; S.daily.enemies+=R.enemies;
   S.stats.best=Math.max(S.stats.best,R.score);
-  const xp=Math.floor((R.dist/8+R.enemies*6+R.bosses*80)*R.mods.xpMul); S.team.forEach(id=>addXp(id,xp));
+  const xp=Math.floor((R.dist/8+R.enemies*6+R.bosses*80)*R.mods.xpMul); teamIds().forEach(id=>addXp(id,xp));
   if(R.mode==='unl')S.unl.best=Math.max(S.unl.best,R.score);
   // 이벤트 집계
   const e=eventInfo(); const mi=EVENT_CATS.findIndex(c=>c[0]===e.cat[0]); const val={score:R.score,combo:R.maxCombo,dist:R.dist,vials:R.vials,enemies:R.enemies,bosses:R.bosses}[e.cat[0]]*(1+teamMult(mi)); S.event.best=Math.max(S.event.best,Math.round(val));
@@ -609,7 +707,7 @@ const CODES={
   // 치트 (테스트용, 반복 사용 가능)
   WEBHEAD:{kind:'cheat',desc:'테스트용 전 재화 지급: 바이알 999,999 · ISO-8 9,999 · 에너지 풀',run(){S.vials+=999999;S.iso+=9999;S.energy=ENERGY_MAX;S.energyAt=now();}},
   MULTIVERSE:{kind:'cheat',desc:'모든 스파이더 카드 해금 (+중복 3장)',run(){CHARS.forEach(c=>{if(!S.owned[c.id])S.owned[c.id]={lv:1,xp:0,dup:3,rk:0};else S.owned[c.id].dup+=3;});}},
-  TITANUP:{kind:'cheat',desc:'팀 전원 최대 레벨',run(){S.team.forEach(id=>{S.owned[id].lv=cap(id);S.owned[id].xp=0;});}},
+  TITANUP:{kind:'cheat',desc:'팀 전원 최대 레벨',run(){teamIds().forEach(id=>{S.owned[id].lv=cap(id);S.owned[id].xp=0;});}},
   ALLSTAGES:{kind:'cheat',desc:'모든 이슈·모든 미션(보스전 포함) 즉시 개방 — 미션 칩을 눌러 바로 도전',run(){S.unlockAll=true; ISSUES.forEach((is,i)=>{ S.mdone['i'+i]=missionCount(i); S.done[i]=1; }); S.mission=Math.min(S.mission,missionCount(S.issue)-1);}},
   SINISTER6:{kind:'cheat',desc:'ALLSTAGES와 동일 (별칭)',run(){return CODES.ALLSTAGES.run();}},
   IMMORTAL:{kind:'cheat',desc:'무적 토글 (러닝 중 피격 무시)',run(){S.god=!S.god;return S.god?'무적 ON':'무적 OFF';}},
