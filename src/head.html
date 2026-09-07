@@ -182,8 +182,22 @@ h1,h2,h3{font-family:var(--disp);text-transform:uppercase;letter-spacing:.01em;m
 
 /* team */
 .team{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.slot{background:#fff;border:var(--line) dashed var(--ink);min-height:82px;display:flex;align-items:center;gap:10px;padding:8px 10px;text-align:left;font-size:12px;color:var(--muted)}
-.slot.filled{border-style:solid;box-shadow:4px 4px 0 var(--ink)}
+.slot{position:relative;background:#fff;border:var(--line) dashed var(--ink);min-height:82px;display:flex;align-items:center;gap:10px;padding:8px 10px;text-align:left;font-size:12px;color:var(--muted);touch-action:none;transition:transform .12s,box-shadow .12s,border-color .12s}
+.slot.filled{border-style:solid;box-shadow:4px 4px 0 var(--ink);cursor:grab}
+.slot.filled:active{cursor:grabbing}
+.slot .no{position:absolute;top:0;left:0;background:var(--ink);color:var(--paper);font-family:var(--disp);font-weight:900;font-size:11px;line-height:1;padding:3px 6px;letter-spacing:.06em}
+.slot.filled.lead .no{background:var(--red);color:#fff}
+.slot.drag-src{opacity:.35;box-shadow:none}
+.slot.drop{border-color:var(--cyan);border-style:solid;box-shadow:0 0 0 4px var(--cyan) inset;transform:translate(-2px,-3px)}
+.teambox{border:var(--line) solid var(--ink);background:var(--paper2);padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px;box-shadow:5px 5px 0 var(--ink)}
+.teambox .sub-h{margin-top:0;font-size:19px}
+.teambox .sub-h small{font-family:var(--body);font-weight:400;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0}
+.teambox .pw b{font-size:24px}
+.dropzone{border:3px dashed var(--muted);color:var(--muted);font-size:12px;text-align:center;padding:8px;margin-top:2px}
+.dropzone.drop{border-color:var(--red);color:var(--redink);font-weight:700;background:#fff}
+#dragGhost{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;background:#fff;border:var(--line) solid var(--ink);box-shadow:6px 8px 0 #0007;padding:6px 8px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink);transform:translate(-50%,-50%) rotate(-4deg) scale(1.04)}
+body.dragging{cursor:grabbing}
+body.dragging .card,body.dragging .slot{user-select:none}
 .slot .ava{width:48px;height:56px;flex:none}
 .slot .name{color:var(--ink);font-weight:700;font-size:13px}
 .slot .meta{color:var(--muted);font-size:11px}
@@ -203,6 +217,8 @@ h1,h2,h3{font-family:var(--disp);text-transform:uppercase;letter-spacing:.01em;m
 .card .lv{font-family:var(--mono);color:var(--muted);font-weight:700}
 .card.inteam::after{display:none}
 .card.inteam::before{content:"TEAM";position:absolute;top:6px;left:-22px;background:var(--cyan);color:var(--ink);font-family:var(--disp);font-weight:900;font-size:11px;padding:1px 26px;transform:rotate(-35deg);border:2px solid var(--ink);z-index:1}
+.card[data-own]{touch-action:none;cursor:grab}
+.card.drag-src{opacity:.35}
 .card.locked{opacity:.4;filter:grayscale(1);background:var(--paper2)}
 .card .dup{position:absolute;top:4px;right:4px;background:var(--yellow);color:var(--ink);font-family:var(--mono);font-size:10px;font-weight:700;padding:0 5px;border:2px solid var(--ink)}
 .ava{display:block}
@@ -413,12 +429,6 @@ body.ingame #cv{width:100%;height:100%}
   <div class="daily" id="daily"></div>
  </section>
 
- <section class="panel" id="p-team">
-  <div class="ph"><span class="chrome">Team</span><small>최대 3명 · 선두가 플레이 캐릭터 · 이벤트 배율은 가산</small></div>
-  <div class="pw">스파이디 파워 <b class="num" id="teamPower">0</b><span>티어 <b style="font-size:20px" id="teamTier"></b></span><span>P = L/10 + (S−1)/2</span></div>
-  <div class="team" id="team"></div>
-  <p class="lead">컬렉션에서 카드를 눌러 팀에 넣거나 빼세요. 러닝에 참가한 카드 전원이 경험치를 얻습니다.</p>
- </section>
 
  <section class="panel" id="p-portal">
   <div class="ph"><span class="chrome">Portal</span><small>차원 포털에서 스파이더를 소환 — 연출은 위 스테이지에서 재생</small></div>
@@ -431,6 +441,14 @@ body.ingame #cv{width:100%;height:100%}
 
  <section class="panel" id="p-collection">
   <div class="ph"><span class="chrome">Collection</span><small id="colCount"></small></div>
+  <div class="teambox">
+   <div class="sub-h">팀 편성 <small>최대 3명 · 선두가 플레이 캐릭터 · 슬롯과 카드를 드래그해 배치·순서 변경</small></div>
+   <div class="pw">스파이디 파워 <b class="num" id="teamPower">0</b><span>티어 <b style="font-size:20px" id="teamTier"></b></span><span>P = L/10 + (S−1)/2</span></div>
+   <div class="team" id="team"></div>
+   <div class="dropzone" id="teamOut">여기로 끌어다 놓으면 팀에서 제외</div>
+   <p class="lead" id="teamHint" style="font-size:12px;margin:0"></p>
+  </div>
+  <div class="sub-h" style="margin-top:10px">보유 카드</div>
   <div class="filters" id="filters"></div>
   <div class="cards" id="cards"></div>
  </section>
@@ -458,9 +476,8 @@ body.ingame #cv{width:100%;height:100%}
 </div>
 <div class="tabbar"><nav id="nav">
  <button data-p="story" class="on"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/></svg>스토리</button>
- <button data-p="team"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5M15 14c3 0 6 1.5 6 4"/></svg>팀</button>
  <button data-p="portal"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 4v2M12 18v2M4 12h2M18 12h2"/></svg>포털</button>
- <button data-p="collection"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="11" height="15" rx="1"/><path d="M14 8h6v13h-9"/></svg>컬렉션</button>
+ <button data-p="collection"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="11" height="15" rx="1"/><path d="M14 8h6v13h-9"/></svg>팀·카드</button>
  <button data-p="event"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>이벤트</button>
  <button data-p="ops"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>옵스</button>
  <button data-p="codex"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3 3z"/><path d="M5 4v16M9 9h6"/></svg>코덱스</button>
