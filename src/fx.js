@@ -74,7 +74,12 @@ document.addEventListener('pointerdown',e=>{ SFX.resume(); SFX.warmSamples(); co
 
 // ===== HUD / 스테이지 연출 =====
 const FX={
-  retrig(el,cls){ el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); },
+  // 애니메이션이 끝나면 클래스를 떼어낸다. 남겨두면 #stage가 display:none <-> block 될 때
+  // 브라우저가 애니메이션을 다시 처음부터 재생해 다음 러닝 시작에 유령처럼 다시 뜬다.
+  retrig(el,cls){ if(!el)return; const t=(el._fxT=(el._fxT||0)+1);
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    const off=()=>{ if(el._fxT===t)el.classList.remove(cls); };
+    el.addEventListener('animationend',off,{once:true}); el.addEventListener('animationcancel',off,{once:true}); },
   flash(){ this.retrig(document.getElementById('fxFlash'),'on'); },
   wipe(){ this.retrig(document.getElementById('fxWipe'),'on'); SFX.play('wipe'); },
   cutin(name){ document.getElementById('fxCutName').textContent=name; this.retrig(document.getElementById('fxCut'),'on'); SFX.play('boss'); },
