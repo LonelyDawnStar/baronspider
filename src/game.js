@@ -312,15 +312,19 @@ function renderCodex(){
 // ===== 네비 / 전체 렌더 =====
 $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{SFX.play('tab');$('#nav .on').classList.remove('on');b.classList.add('on');document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.p));});
 function renderAll(){dailyCheck();renderRes();renderStory();renderTeam();renderCards();renderEvent();renderOps();}
-function toast(t){const el=$('#toast');$('#toastT').textContent=t;el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
+function toast(t){const el=$('#toast');$('#toastT').textContent=t;FX.retrig(el,'pop');}
 
 // ===== 러너 엔진 =====
 const cv=$('#cv'),ctx=cv.getContext('2d'); let W=1280,H=720,LW=W*0.27; const FOV=6,ZF=42,OS=1.35;
 // 화면 방향에 맞춰 캔버스 해상도 전환 (세로 폰: 720×1280)
 function fitCanvas(){ const st=$('#stage'); const r=st.getBoundingClientRect(); const portrait=r.height>r.width*1.05; const nw=portrait?720:1280, nh=portrait?1280:720; if(cv.width!==nw){ cv.width=nw; cv.height=nh; if(typeof pv!=='undefined'){pv.width=nw;pv.height=nh;pvValid=false;} } W=nw; H=nh; LW=W*(portrait?0.31:0.27); if(!R){HOR=H*0.42;G=H*0.47;} }
 const isMobile=matchMedia('(pointer:coarse)').matches||innerWidth<700;
-function enterPlayMode(){ document.body.classList.add('ingame'); fitCanvas(); if(isMobile){ try{ if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('portrait').catch(()=>{}); }catch(e){} } }
-function exitPlayMode(){ document.body.classList.remove('ingame'); }
+// #stage가 숨겨져 있는 동안에는 CSS 애니메이션이 돌지 않는다. 클래스가 남은 채로
+// display가 다시 켜지면 그때부터 재생되어 이전 러닝의 배너·컷인·토스트가 되살아난다.
+const STAGE_FX=[['#fxFlash','on'],['#fxWipe','on'],['#fxCut','on'],['#fxBanner','on'],['#toast','pop']];
+function clearStageFx(){ STAGE_FX.forEach(([sel,cls])=>{const e=$(sel); if(e){e._fxT=(e._fxT||0)+1; e.classList.remove(cls);}}); }
+function enterPlayMode(){ clearStageFx(); document.body.classList.add('ingame'); fitCanvas(); if(isMobile){ try{ if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('portrait').catch(()=>{}); }catch(e){} } }
+function exitPlayMode(){ document.body.classList.remove('ingame'); clearStageFx(); }
 window.addEventListener('resize',()=>fitCanvas());
 // 시점(카메라) 파라미터 — 구간별로 부드럽게 보간
 const VIEWS={run:{hor:0.42,g:0.47},boss:{hor:0.42,g:0.47},swing:{hor:0.40,g:0.47},wall:{hor:0.15,g:0.80},fall:{hor:0.52,g:0.40}};
