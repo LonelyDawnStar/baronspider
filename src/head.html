@@ -99,7 +99,7 @@ h1,h2,h3{font-family:var(--disp);text-transform:uppercase;letter-spacing:.01em;m
 .banner{position:absolute;left:50%;top:28%;transform:translate(-50%,-50%) skew(-8deg) scale(.6);opacity:0;pointer-events:none;background:var(--paper);color:var(--ink);border:var(--line) solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:8px 26px;font-family:var(--disp);font-weight:900;font-size:clamp(26px,4.5vw,44px);text-transform:uppercase;white-space:nowrap}
 .banner.on{animation:banner 1.6s ease-out forwards}
 @keyframes banner{0%{opacity:0;transform:translate(-50%,-50%) skew(-8deg) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) skew(-8deg) scale(1.08)}25%{transform:translate(-50%,-50%) skew(-8deg) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%) skew(-8deg)}}
-.toast{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);pointer-events:none;opacity:0}
+.toast{position:fixed;z-index:200;left:50%;top:40%;transform:translate(-50%,-50%);pointer-events:none;opacity:0}
 .toast .chrome{font-size:clamp(30px,6.5vw,68px)}
 .toast.pop{animation:pop 1s ease-out forwards}
 @keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.5) rotate(-8deg)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.15) rotate(2deg)}25%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-65%)}}
@@ -189,6 +189,8 @@ h1,h2,h3{font-family:var(--disp);text-transform:uppercase;letter-spacing:.01em;m
 .slot.filled.lead .no{background:var(--red);color:#fff}
 .slot.drag-src{opacity:.35;box-shadow:none}
 .slot.drop{border-color:var(--cyan);border-style:solid;box-shadow:0 0 0 4px var(--cyan) inset;transform:translate(-2px,-3px)}
+.teambox.on{animation:tbflash .6s ease-out}
+@keyframes tbflash{0%,100%{box-shadow:5px 5px 0 var(--ink)}30%{box-shadow:0 0 0 5px var(--cyan),5px 5px 0 var(--ink)}}
 .teambox{border:var(--line) solid var(--ink);background:var(--paper2);padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px;box-shadow:5px 5px 0 var(--ink)}
 .teambox .sub-h{margin-top:0;font-size:19px}
 .teambox .sub-h small{font-family:var(--body);font-weight:400;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0}
@@ -391,7 +393,6 @@ body.ingame #cv{width:100%;height:100%}
   <div class="wipe" id="fxWipe"></div>
   <div class="cutin" id="fxCut"><small>BOSS</small><span class="chrome" id="fxCutName"></span></div>
   <div class="banner" id="fxBanner"></div>
-  <div class="toast" id="toast"><span class="chrome red" id="toastT"></span></div>
   <div class="overlay" id="ovTitle">
    <div class="ttl-title"><span class="chrome" style="font-size:clamp(30px,6vw,64px)">Web-Runner</span><span class="chrome red" style="font-size:clamp(44px,9.5vw,100px)">Unlimited</span></div>
    <p>다중우주의 시니스터 식스가 뉴욕에 포털을 열었다. S.H.I.E.L.D.는 같은 포털로 다른 차원의 스파이더들을 소환한다. 달리고, 스윙하고, 벽을 타고, 떨어지며 여섯 개의 이슈를 돌파하라.</p>
@@ -482,4 +483,5 @@ body.ingame #cv{width:100%;height:100%}
  <button data-p="ops"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>옵스</button>
  <button data-p="codex"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3 3z"/><path d="M5 4v16M9 9h6"/></svg>코덱스</button>
 </nav></div>
+<div class="toast" id="toast"><span class="chrome red" id="toastT"></span></div>
 <dialog id="dlg"></dialog>
