@@ -105,7 +105,7 @@ function idleLoop(t){
   ctx.save(); ctx.translate(px,py); ctx.scale(2.4,2.4); ctx.fillStyle='#00000066'; ctx.beginPath(); ctx.ellipse(0,2,40,7,0,0,7); ctx.fill(); ctx.restore();
   drawHero(px,py,2.4,lead.c[0],lead.c[1],poseFor('idle',idleT*2));
   // 이름표
-  ctx.save(); ctx.font=`900 30px ${getComputedStyle(document.body).getPropertyValue('--disp')}`; const nw=ctx.measureText(lead.name).width+40; ctx.translate(W*0.85-nw/2,H*0.12); ctx.transform(1,0,-0.14,1,0,0); ctx.fillStyle='#0d0f1c'; ctx.fillRect(4,4,nw,44); ctx.fillStyle=RARITY[lead.r].color; ctx.fillRect(0,0,nw,44); ctx.strokeStyle='#0d0f1c'; ctx.lineWidth=3; ctx.strokeRect(0,0,nw,44); ctx.textBaseline='middle'; ctx.textAlign='left'; ctx.fillStyle='#0d0f1c'; ctx.fillText(lead.name,20,23); ctx.restore();
+  ctx.save(); ctx.font=`900 30px ${canvasFont('--disp')}`; const nw=ctx.measureText(lead.name).width+40; ctx.translate(W*0.85-nw/2,H*0.12); ctx.transform(1,0,-0.14,1,0,0); ctx.fillStyle='#0d0f1c'; ctx.fillRect(4,4,nw,44); ctx.fillStyle=RARITY[lead.r].color; ctx.fillRect(0,0,nw,44); ctx.strokeStyle='#0d0f1c'; ctx.lineWidth=3; ctx.strokeRect(0,0,nw,44); ctx.textBaseline='middle'; ctx.textAlign='left'; ctx.fillStyle='#0d0f1c'; ctx.fillText(lead.name,20,23); ctx.restore();
   idleRAF=requestAnimationFrame(idleLoop);
 }
 function startIdle(){ if(!idleRAF)idleRAF=requestAnimationFrame(idleLoop); }
@@ -156,19 +156,19 @@ function sumDraw(){
   if(ph==='burst'){ const k=t/0.55; const [c]=SUM.list[SUM.i]; drawCard(W/2,H*0.5,0.2+k*0.9,Math.PI*k*3,c,false,0); }
   else if(ph==='reveal'){ const [c,isNew]=SUM.list[SUM.i]; const k=Math.min(1,t/0.35); const e=1-Math.pow(1-k,4); const sc=1.35-0.35*e; drawCard(W/2,H*0.5,sc,0,c,true,t,isNew);
     // 희귀도 슬램
-    const rr=RAR_RANK[c.r]; const s2=t<0.5?1.8-1.6*(t/0.5):1; ctx.save(); ctx.translate(W/2,H*0.13); ctx.transform(1,0,-0.16,1,0,0); ctx.scale(s2,s2); ctx.font=`900 ${52+rr*8}px ${getComputedStyle(document.body).getPropertyValue('--disp')}`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineWidth=10; ctx.strokeStyle='#0d0f1c'; ctx.lineJoin='round'; ctx.strokeText(RAR_LABEL[c.r],0,0); const gt=ctx.createLinearGradient(0,-30,0,30); gt.addColorStop(0,'#fff'); gt.addColorStop(0.5,RARITY[c.r].color); gt.addColorStop(1,'#fff'); ctx.fillStyle=gt; ctx.fillText(RAR_LABEL[c.r],0,0); ctx.restore();
+    const rr=RAR_RANK[c.r]; const s2=t<0.5?1.8-1.6*(t/0.5):1; ctx.save(); ctx.translate(W/2,H*0.13); ctx.transform(1,0,-0.16,1,0,0); ctx.scale(s2,s2); ctx.font=`900 ${52+rr*8}px ${canvasFont('--disp')}`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineWidth=10; ctx.strokeStyle='#0d0f1c'; ctx.lineJoin='round'; ctx.strokeText(RAR_LABEL[c.r],0,0); const gt=ctx.createLinearGradient(0,-30,0,30); gt.addColorStop(0,'#fff'); gt.addColorStop(0.5,RARITY[c.r].color); gt.addColorStop(1,'#fff'); ctx.fillStyle=gt; ctx.fillText(RAR_LABEL[c.r],0,0); ctx.restore();
     // 카운터
-    ctx.font=`700 22px ${getComputedStyle(document.body).getPropertyValue('--mono')}`; ctx.fillStyle='#fff'; ctx.textAlign='right'; ctx.fillText(`${SUM.i+1} / ${SUM.list.length}`,W-30,40);
+    ctx.font=`700 22px ${canvasFont('--mono')}`; ctx.fillStyle='#fff'; ctx.textAlign='right'; ctx.fillText(`${SUM.i+1} / ${SUM.list.length}`,W-30,40);
   } else if(ph==='all'){ // 전체 나열
     const n=SUM.list.length; const cols=Math.min(n,5); const rows=Math.ceil(n/cols); const cw=Math.min(190,(W-80)/cols), chh=cw*1.3; const sc=cw/210;
     SUM.list.forEach(([c,isNew],i)=>{ const col=i%cols,row=Math.floor(i/cols); const x=W/2+(col-(cols-1)/2)*(cw+14), y=H/2+(row-(rows-1)/2)*(chh+14); const k=Math.min(1,Math.max(0,(t-i*0.06)/0.3)); if(k>0)drawCard(x,y,sc*(0.7+0.3*k),(1-k)*Math.PI/2,c,true,1,isNew); });
-    ctx.font=`900 40px ${getComputedStyle(document.body).getPropertyValue('--disp')}`; ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.lineWidth=8; ctx.strokeStyle='#0d0f1c'; ctx.strokeText('SUMMON RESULT',W/2,48); ctx.fillText('SUMMON RESULT',W/2,48);
-  } else { ctx.font=`900 46px ${getComputedStyle(document.body).getPropertyValue('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=8; ctx.strokeStyle='#0d0f1c'; ctx.fillStyle='#fff'; const tt='DIMENSIONAL PORTAL OPENING'+'.'.repeat(1+Math.floor(t*3)%3); ctx.strokeText(tt,W/2,H*0.88); ctx.fillText(tt,W/2,H*0.88); }
+    ctx.font=`900 40px ${canvasFont('--disp')}`; ctx.textAlign='center'; ctx.fillStyle='#fff'; ctx.lineWidth=8; ctx.strokeStyle='#0d0f1c'; ctx.strokeText('SUMMON RESULT',W/2,48); ctx.fillText('SUMMON RESULT',W/2,48);
+  } else { ctx.font=`900 46px ${canvasFont('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=8; ctx.strokeStyle='#0d0f1c'; ctx.fillStyle='#fff'; const tt='DIMENSIONAL PORTAL OPENING'+'.'.repeat(1+Math.floor(t*3)%3); ctx.strokeText(tt,W/2,H*0.88); ctx.fillText(tt,W/2,H*0.88); }
   ctx.restore();
 }
 function drawCard(x,y,sc,rotY,c,face,t,isNew){
   const w=210,h=290; const cos=Math.cos(rotY); const showFace=face&&cos>0; ctx.save(); ctx.translate(x,y); ctx.scale(sc*Math.abs(cos)||0.02,sc);
-  const rc=RARITY[c.r].color; const disp=getComputedStyle(document.body).getPropertyValue('--disp');
+  const rc=RARITY[c.r].color; const disp=canvasFont('--disp');
   ctx.fillStyle='#0d0f1c'; ctx.fillRect(-w/2-8,-h/2+8,w,h); // 하드 섀도
   ctx.lineWidth=6; ctx.strokeStyle='#0d0f1c';
   if(!showFace){ const gb=ctx.createLinearGradient(-w/2,-h/2,w/2,h/2); gb.addColorStop(0,'#1b2050'); gb.addColorStop(1,'#0d0f1c'); ctx.fillStyle=gb; ctx.fillRect(-w/2,-h/2,w,h); ctx.strokeRect(-w/2,-h/2,w,h);
@@ -182,10 +182,10 @@ function drawCard(x,y,sc,rotY,c,face,t,isNew){
     ctx.save(); ctx.beginPath(); ctx.rect(-w/2,-h/2+48,w,h-110); ctx.clip(); ctx.translate(0,40); ctx.rotate(t*0.6); for(let i=0;i<16;i++){ctx.fillStyle=i%2?rc+'55':'#ffffff00';ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,400,i*Math.PI/8,(i+1)*Math.PI/8);ctx.closePath();ctx.fill();} ctx.restore();
     ctx.save(); ctx.beginPath(); ctx.rect(-w/2,-h/2+48,w,h-110); ctx.clip(); const pop=Math.min(1,t/0.4); drawHero(0,h/2-64+(1-pop)*40,1.0,c.c[0],c.c[1],poseFor('idle',t*2)); ctx.restore();
     // 이름 밴드
-    ctx.fillStyle='#0d0f1c'; ctx.fillRect(-w/2,h/2-62,w,62); ctx.fillStyle='#fff'; ctx.textAlign='center'; { let fs=16; const bf=getComputedStyle(document.body).getPropertyValue('--body'); do{ ctx.font=`700 ${fs}px ${bf}`; fs--; }while(ctx.measureText(c.name).width>w-16&&fs>9); ctx.fillText(c.name,0,h/2-38); } ctx.fillStyle='#9aa3c4'; ctx.font=`600 11px ${getComputedStyle(document.body).getPropertyValue('--body')}`; ctx.fillText(c.g,0,h/2-12);
+    ctx.fillStyle='#0d0f1c'; ctx.fillRect(-w/2,h/2-62,w,62); ctx.fillStyle='#fff'; ctx.textAlign='center'; { let fs=16; const bf=canvasFont('--body'); do{ ctx.font=`700 ${fs}px ${bf}`; fs--; }while(ctx.measureText(c.name).width>w-16&&fs>9); ctx.fillText(c.name,0,h/2-38); } ctx.fillStyle='#9aa3c4'; ctx.font=`600 11px ${canvasFont('--body')}`; ctx.fillText(c.g,0,h/2-12);
     ctx.strokeStyle='#0d0f1c'; ctx.lineWidth=6; ctx.strokeRect(-w/2,-h/2,w,h);
     if(isNew){ ctx.save(); ctx.translate(-w/2+28,-h/2+70); ctx.rotate(-0.5); ctx.fillStyle='#e6202a'; ctx.fillRect(-50,-12,100,24); ctx.strokeStyle='#0d0f1c'; ctx.lineWidth=3; ctx.strokeRect(-50,-12,100,24); ctx.fillStyle='#fff'; ctx.font=`900 16px ${disp}`; ctx.textAlign='center'; ctx.fillText('NEW',0,1); ctx.restore(); }
-    else { ctx.fillStyle='#ffd23a'; ctx.fillRect(w/2-60,-h/2+56,52,22); ctx.strokeStyle='#0d0f1c'; ctx.lineWidth=3; ctx.strokeRect(w/2-60,-h/2+56,52,22); ctx.fillStyle='#0d0f1c'; ctx.font=`700 12px ${getComputedStyle(document.body).getPropertyValue('--mono')}`; ctx.textAlign='center'; ctx.fillText('DUP +1',w/2-34,-h/2+68); }
+    else { ctx.fillStyle='#ffd23a'; ctx.fillRect(w/2-60,-h/2+56,52,22); ctx.strokeStyle='#0d0f1c'; ctx.lineWidth=3; ctx.strokeRect(w/2-60,-h/2+56,52,22); ctx.fillStyle='#0d0f1c'; ctx.font=`700 12px ${canvasFont('--mono')}`; ctx.textAlign='center'; ctx.fillText('DUP +1',w/2-34,-h/2+68); }
     // 홀로 시트 (레어 이상)
     if(RAR_RANK[c.r]>=2){ const k=(t*0.8)%1.6-0.3; const gs=ctx.createLinearGradient(-w/2+k*w*1.6-60,0,-w/2+k*w*1.6+60,0); gs.addColorStop(0,'#ffffff00'); gs.addColorStop(0.5,'#ffffff77'); gs.addColorStop(1,'#ffffff00'); ctx.fillStyle=gs; ctx.fillRect(-w/2,-h/2,w,h); }
   }

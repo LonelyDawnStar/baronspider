@@ -1,3 +1,8 @@
+// Patch 0.1: reuse computed font families instead of querying layout while drawing.
+const renderFonts=Object.create(null);
+function canvasFont(name){
+  return renderFonts[name]||(renderFonts[name]=getComputedStyle(document.body).getPropertyValue(name).trim()||'sans-serif');
+}
 // ===== 렌더 모듈: 카툰 리그 · 보스 모델 · 환경 · 해저드 =====
 const INK='#0d0f1c';
 const lerp=(a,b,k)=>a+(b-a)*k;
@@ -243,7 +248,7 @@ function drawUltronRevision(fam,t){
 // --- 보스 모델 ---
 function drawBossModel(b,s,t){
   const fam=b.fam; const [c1,c2]=VARIANT_PAL[b.name]||FAM_COL[fam]; const c2d=shade(c2,-0.3); const bob=Math.sin(t*2.2)*6; const hurt=b.hurtT>0; const flash=hurt&&Math.floor(t*30)%2===0;
-  ctx.save(); ctx.scale(s,s); ctx.translate(0,bob); if(flash){ctx.filter='brightness(2.5)';}
+  ctx.save(); ctx.scale(s,s); ctx.translate(0,bob); if(flash){ctx.globalAlpha*=0.7;}
   const P=poseFor('idle',t*1.3,{override:{lArm:0.6,rArm:0.6,armsUp:0.3,lSpread:0.4,rSpread:0.4}}); P.face='front';
   switch(fam){
     case 'goblin': { // 글라이더
@@ -357,7 +362,7 @@ function drawHazards(){
     for(const l of h.lanes){ const lx=l-1;
       if(!act){ // 텔레그래프: 바닥 스트라이프 + 깜빡임
         const a=proj(lx-0.45,0,1.5),b=proj(lx+0.45,0,1.5),c=proj(lx+0.45,0,9),d=proj(lx-0.45,0,9); const blink=(Math.floor(h.t*(6+k*14))%2)?0.55:0.25; ctx.fillStyle=`rgba(230,32,42,${blink*k+0.1})`; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill(); ctx.strokeStyle='#ffd23a'; ctx.lineWidth=3; ctx.setLineDash([12,8]); ctx.stroke(); ctx.setLineDash([]);
-        const p=proj(lx,0,4); ctx.fillStyle='#fff'; ctx.font=`900 ${34*p.s}px ${getComputedStyle(document.body).getPropertyValue('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=5; ctx.strokeStyle=INK; const lab=h.kind==='low'?'▲ JUMP':h.kind==='high'?'▼ SLIDE':h.soft?'⟳':'!'; ctx.strokeText(lab,p.x,p.y-40*p.s); ctx.fillText(lab,p.x,p.y-40*p.s);
+        const p=proj(lx,0,4); ctx.fillStyle='#fff'; ctx.font=`900 ${34*p.s}px ${canvasFont('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=5; ctx.strokeStyle=INK; const lab=h.kind==='low'?'▲ JUMP':h.kind==='high'?'▼ SLIDE':h.soft?'⟳':'!'; ctx.strokeText(lab,p.x,p.y-40*p.s); ctx.fillText(lab,p.x,p.y-40*p.s);
         if(h.vis==='pumpkin'){ const fy=lerp(-3.5,0.4,k*k); const pp=proj(lx,Math.max(0,fy)+0.2,4); ctx.save(); ctx.translate(pp.x,pp.y); ctx.scale(pp.s,pp.s); ctx.rotate(h.t*6); blob(0,0,22,20,'#ff9a2b',5); ctx.fillStyle=INK; ctx.beginPath(); ctx.moveTo(-10,-6);ctx.lineTo(-3,-1);ctx.lineTo(-11,1);ctx.moveTo(10,-6);ctx.lineTo(3,-1);ctx.lineTo(11,1);ctx.fill(); ctx.fillRect(-9,7,18,4); ctx.restore(); }
         if(h.vis==='laser'){ const bp=proj(R.boss?R.boss.x:0,1.6,14); const tp=proj(lx,0.05,4); ctx.save(); ctx.setLineDash([10,10]); ctx.lineDashOffset=-h.t*40; ctx.strokeStyle=`rgba(201,130,31,${0.45+0.45*k})`; ctx.lineWidth=3+3*k; ctx.beginPath(); ctx.moveTo(bp.x,bp.y); ctx.lineTo(tp.x,tp.y); ctx.stroke(); ctx.restore(); ctx.strokeStyle='#c9821f'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(tp.x,tp.y,(26+10*Math.sin(h.t*10))*tp.s,0,7); ctx.stroke(); }
         if(h.vis==='nano'){ const tp=proj(lx,0.1,4); for(let i=0;i<10;i++){ const a=i*0.63+h.t*5; const rr=(90-70*k)*tp.s; ctx.fillStyle=i%2?'#b26df0':'#d7c2f5'; ctx.fillRect(tp.x+Math.cos(a)*rr-3,tp.y+Math.sin(a)*rr*0.4-3,6,6); } }
@@ -480,13 +485,13 @@ function drawBoundary(cur,nxt,b){
   const p=proj(0,0,b); const s=p.s;
   const stripeBar=(y0,y1)=>{ const a=proj(-1.75,y0,b),c=proj(1.75,y0,b),d=proj(1.75,y1,b),e=proj(-1.75,y1,b); ctx.fillStyle='#ffd23a'; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.lineTo(e.x,e.y); ctx.closePath(); ctx.fill(); ctx.save(); ctx.clip(); ctx.fillStyle=INK; const w=(c.x-a.x); for(let x=0;x<w;x+=40*s+8){ ctx.beginPath(); ctx.moveTo(a.x+x,e.y); ctx.lineTo(a.x+x+18*s+4,e.y); ctx.lineTo(a.x+x+8*s+2,a.y); ctx.lineTo(a.x+x-10*s-2,a.y); ctx.closePath(); ctx.fill(); } ctx.restore(); ctx.strokeStyle=INK; ctx.lineWidth=3; ctx.stroke(); };
   if(nxt==='swing'||nxt==='fall'){ stripeBar(0,0.28); // 옥상 끝 난간
-    ctx.font=`900 ${40*s+6}px ${getComputedStyle(document.body).getPropertyValue('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=5; ctx.strokeStyle=INK; ctx.fillStyle='#fff'; const t=nxt==='swing'?'↑ WEB-SWING':'↓ FREE FALL'; ctx.strokeText(t,p.x,p.y-60*s-10); ctx.fillText(t,p.x,p.y-60*s-10); }
+    ctx.font=`900 ${40*s+6}px ${canvasFont('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=5; ctx.strokeStyle=INK; ctx.fillStyle='#fff'; const t=nxt==='swing'?'↑ WEB-SWING':'↓ FREE FALL'; ctx.strokeText(t,p.x,p.y-60*s-10); ctx.fillText(t,p.x,p.y-60*s-10); }
   else if(nxt==='wall'){ // 다가오는 빌딩 외벽
     const a=proj(-2.6,0,b),c=proj(2.6,0,b),d=proj(2.6,7,b),e=proj(-2.6,7,b); ctx.fillStyle='#26305a'; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.lineTo(e.x,e.y); ctx.closePath(); ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=4; ctx.stroke();
     for(let yy=0.5;yy<7;yy+=1){ for(let xx=-2.2;xx<2.6;xx+=0.8){ const p1=proj(xx,yy,b),p2=proj(xx+0.5,yy+0.6,b); ctx.fillStyle=((xx*3+yy*5)|0)%3===0?'#ffd23a44':'#141b3a'; ctx.fillRect(p1.x,p2.y,p2.x-p1.x,p1.y-p2.y); } }
-    ctx.font=`900 ${40*s+6}px ${getComputedStyle(document.body).getPropertyValue('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=5; ctx.strokeStyle=INK; ctx.fillStyle='#fff'; ctx.strokeText('↑ WALL-CRAWL',p.x,p.y-200*s-10); ctx.fillText('↑ WALL-CRAWL',p.x,p.y-200*s-10); }
+    ctx.font=`900 ${40*s+6}px ${canvasFont('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=5; ctx.strokeStyle=INK; ctx.fillStyle='#fff'; ctx.strokeText('↑ WALL-CRAWL',p.x,p.y-200*s-10); ctx.fillText('↑ WALL-CRAWL',p.x,p.y-200*s-10); }
   else if(cur==='swing'||cur==='fall'||cur==='wall'){ stripeBar(0,0.22); // 착지 옥상 시작
-    ctx.font=`900 ${34*s+6}px ${getComputedStyle(document.body).getPropertyValue('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=5; ctx.strokeStyle=INK; ctx.fillStyle='#fff'; ctx.strokeText('ROOFTOP',p.x,p.y-50*s-8); ctx.fillText('ROOFTOP',p.x,p.y-50*s-8); }
+    ctx.font=`900 ${34*s+6}px ${canvasFont('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=5; ctx.strokeStyle=INK; ctx.fillStyle='#fff'; ctx.strokeText('ROOFTOP',p.x,p.y-50*s-8); ctx.fillText('ROOFTOP',p.x,p.y-50*s-8); }
 }
 // 스윙 구간 장애물 모델 (빌보드 / 크레인 빔)
 function drawSwingObstacle(o,lx,dz,p){
