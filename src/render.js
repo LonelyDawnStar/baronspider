@@ -688,6 +688,30 @@ function drawEnv(issue,off,seg){
 // --- 지면/협곡 구간 렌더 (z 범위) ---
 function drawGroundRange(type,z0,z1,col){
   const q=(xl,xr,zz0,zz1,fill)=>{ const a=proj(xl,0,zz0),b=proj(xr,0,zz0),c=proj(xr,0,zz1),d=proj(xl,0,zz1); ctx.fillStyle=fill; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill(); };
+  if(type==='swing'&&(R.issue===6||R.issue===7)){
+    const alien=R.issue===7;
+    const poly=(points,fill,stroke)=>{ctx.beginPath();points.forEach(([x,y,z],i)=>{const p=proj(x,y,z);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}};
+    q(-1.9,1.9,z0,z1,alien?'#24102e':'#07151d');
+    for(let z=Math.ceil(z0/4)*4;z<z1;z+=4){const end=Math.min(z+2,z1);q(-1.7,1.7,z,end,alien?'#582841':'#142c36');if(alien){q(-.45,.15,z,end,'#d88b4155');}else{q(-1.8,-1.65,z,end,'#42bdd6');q(1.65,1.8,z,end,'#42bdd6');}}
+    for(const side of [-1,1]){
+      poly([[side*1.9,0,z0],[side*1.9,0,z1],[side*1.9,5,z1],[side*1.9,5,z0]],alien?'#34203e':'#17262d');
+      for(let z=Math.ceil(z0/4)*4;z<z1;z+=4){const e=Math.min(z+3.4,z1);
+        if(alien){
+          poly([[side*1.89,.2,z],[side*1.89,2.1,z+.6],[side*1.89,4.7,e],[side*1.89,1,e]],'#573652','#a17b54');
+          poly([[side*1.88,.4,z],[side*1.88,2.3,z+.6],[side*1.88,4.7,e],[side*1.88,4.1,e]],'#936946');
+        }else{
+          poly([[side*1.89,.2,z],[side*1.89,4.8,z],[side*1.89,4.8,e],[side*1.89,.2,e]],'#233842','#43616a');
+          for(const y of [.65,2,3.4])poly([[side*1.88,y,z+.2],[side*1.88,y+.12,z+.2],[side*1.88,y+.12,e-.2],[side*1.88,y,e-.2]],y===2?'#ef534c':'#52c3d4');
+          poly([[side*1.87,.2,z],[side*1.87,.4,z],[side*1.87,4.8,e],[side*1.87,4.6,e]],'#101b23');
+        }
+      }
+    }
+    for(let z=Math.ceil(z0/10)*10;z<z1;z+=10){
+      if(alien){poly([[-1.9,3.5,z],[-.7,5.1,z],[.7,5.1,z],[1.9,3.5,z],[.65,4.7,z],[-.65,4.7,z]],'#a68157','#402c44');}
+      else{poly([[-1.9,3.8,z],[1.9,3.8,z],[1.9,4.05,z],[-1.9,4.05,z]],'#344e58','#73a1ac');}
+    }
+    return;
+  }
   if(type==='swing'){
     q(-1.9,1.9,z0,z1,'#04060f'); // 협곡 바닥(어둠)
     for(const side of[-1,1]){ // 빌딩 벽면: 바닥에서 위로

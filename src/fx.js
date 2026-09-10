@@ -270,28 +270,44 @@ VOICE.boss=function(fam,ev){ if(!this.on)return Promise.resolve(0); SFX.resume()
 
 // ===== 배경음악 (크로스페이드 루프 + 보이스 더킹) =====
 const MUSIC={on:true,vol:0.5,cur:null,bufs:{},nodes:{},duckT:0,started:false,
-  async buffer(k){ if(this.bufs[k])return this.bufs[k]; const durl=(typeof BUILTIN_BGM!=='undefined')&&BUILTIN_BGM[k]; if(!durl)return null; SFX.init(); if(!SFX.ac)return null;
-    try{ const i=durl.indexOf(','); const bin=atob(durl.slice(i+1)); const arr=new Uint8Array(bin.length); for(let j=0;j<bin.length;j++)arr[j]=bin.charCodeAt(j);
-      this.bufs[k]=await new Promise((res,rej)=>SFX.ac.decodeAudioData(arr.buffer,res,rej)); return this.bufs[k]; }catch(e){ console.warn('bgm decode fail',k,e); return null; } },
-  bus(){ if(!this.out){ this.out=SFX.ac.createGain(); this.out.gain.value=this.on?this.vol:0; this.out.connect(SFX.ac.destination); } return this.out; },
-  async play(k,{fade=1.0}={}){ if(!SFX.on)return; SFX.resume(); if(!SFX.ac)return; if(this.cur===k&&this.nodes[k])return; const buf=await this.buffer(k); if(!buf)return;
-    const ac=SFX.ac, t=ac.currentTime, prev=this.cur; this.cur=k; this.started=true;
-    // 이전 트랙 페이드아웃
-    if(prev&&this.nodes[prev]){ const n=this.nodes[prev]; delete this.nodes[prev]; try{ n.g.gain.cancelScheduledValues(t); n.g.gain.setValueAtTime(n.g.gain.value,t); n.g.gain.linearRampToValueAtTime(0.0001,t+fade); n.s.stop(t+fade+0.05); }catch(e){} }
-    if(this.nodes[k])return;
-    const s=ac.createBufferSource(); s.buffer=buf; s.loop=true; const g=ac.createGain();
-    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(1,t+fade);
-    s.connect(g); g.connect(this.bus()); s.start(0); this.nodes[k]={s,g}; },
-  stop(fade=0.6){ const ac=SFX.ac; if(!ac)return; const t=ac.currentTime; for(const k in this.nodes){ const n=this.nodes[k]; try{ n.g.gain.cancelScheduledValues(t); n.g.gain.setValueAtTime(n.g.gain.value,t); n.g.gain.linearRampToValueAtTime(0.0001,t+fade); n.s.stop(t+fade+0.05);}catch(e){} delete this.nodes[k]; } this.cur=null; },
+  mode:'auto', retiring:new Set(),
+  resolve(k){
+    const mode=this.mode;
+    if(mode==='main')return 'main';
+    if(mode==='ultron'&&issueUnlocked(6))return 'ultron';
+    if(mode==='infinity'&&issueUnlocked(7))return 'infinity';
+    const i=R?R.issue:S.issue;
+    return i===6?'ultron':i===7?'infinity':k;
+  },
+  setMode(mode){this.mode=mode;try{localStorage.setItem('wru_music_mode',mode);}catch(e){}this.play(R&&R.boss?'boss':'main');},
+  bus(){if(!this.out){this.out=SFX.ac.createGain();this.out.gain.value=this.on?this.vol:0;this.out.connect(SFX.ac.destination);}return this.out;},
+  dispose(n){if(!n)return;clearTimeout(n.timer);n.audio.pause();n.audio.removeAttribute('src');n.audio.load();n.s.disconnect();n.g.disconnect();this.retiring.delete(n);},
+  async play(requested,{fade=0.6}={}){
+    if(!this.on||document.hidden)return;
+    SFX.resume();if(!SFX.ac)return;
+    const k=this.resolve(requested);if(this.cur===k&&this.nodes[k])return;
+    const url=k==='ultron'?'assets/audio/age-of-ultron.mp3':k==='infinity'?'assets/audio/infinity-war.mp3':BUILTIN_BGM[k];
+    if(!url)return;
+    for(const n of [...this.retiring])this.dispose(n);
+    const ac=SFX.ac,t=ac.currentTime;
+    const audio=new Audio(url);audio.loop=true;audio.preload='metadata';
+    const source=ac.createMediaElementSource(audio),g=ac.createGain();source.connect(g);g.connect(this.bus());
+    g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(1,t+fade);
+    const n={audio,s:source,g};
+    for(const key in this.nodes){const prev=this.nodes[key];delete this.nodes[key];prev.g.gain.cancelScheduledValues(t);prev.g.gain.setValueAtTime(prev.g.gain.value,t);prev.g.gain.linearRampToValueAtTime(0,t+fade);this.retiring.add(prev);prev.timer=setTimeout(()=>this.dispose(prev),fade*1000+50);}
+    this.nodes[k]=n;this.cur=k;this.started=true;
+    try{await audio.play();}catch(e){if(this.nodes[k]===n){delete this.nodes[k];this.cur=null;this.started=false;this.dispose(n);console.warn('BGM playback unavailable',k,e);}}
+  },
+  stop(){for(const n of Object.values(this.nodes))this.dispose(n);for(const n of [...this.retiring])this.dispose(n);this.nodes={};this.cur=null;this.started=false;},
   // 보스 보이스가 나오는 동안 음악을 낮춤
   duck(sec=1.2,to=0.32){ if(!SFX.ac||!this.on)return; const g=this.bus().gain, t=SFX.ac.currentTime; const end=t+sec;
     if(end<=this.duckT)return; this.duckT=end;
     g.cancelScheduledValues(t); g.setValueAtTime(g.value,t); g.linearRampToValueAtTime(this.vol*to,t+0.12); g.setValueAtTime(this.vol*to,end-0.3); g.linearRampToValueAtTime(this.vol,end); },
   setOn(v){ this.on=v; try{localStorage.setItem('wru_bgm',v?'1':'0');}catch(e){}
     if(SFX.ac){ const g=this.bus().gain,t=SFX.ac.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value,t); g.linearRampToValueAtTime(v?this.vol:0.0001,t+0.3); }
-    if(v&&!this.started)this.play(R&&R.boss?'boss':'main'); },
+    if(!v)this.stop(); if(v&&!this.started)this.play(R&&R.boss?'boss':'main'); },
 };
-try{ MUSIC.on=localStorage.getItem('wru_bgm')!=='0'; }catch(e){}
+try{ MUSIC.on=localStorage.getItem('wru_bgm')!=='0'; MUSIC.mode=localStorage.getItem('wru_music_mode')||'auto'; }catch(e){}
 function renderBgmBtn(){ const b=document.getElementById('bBgm'); if(b)b.classList.toggle('off',!MUSIC.on); }
 { const b=document.getElementById('bBgm'); if(b)b.onclick=()=>{ MUSIC.setOn(!MUSIC.on); renderBgmBtn(); }; renderBgmBtn(); }
 // 첫 사용자 제스처에 음악 시작
@@ -309,15 +325,15 @@ const _sfxResume=SFX.resume.bind(SFX);
 SFX.resume=function(){ if(document.hidden)return; _sfxResume(); };
 const AUDIOHOLD={held:false};
 function audioHold(){
-  if(AUDIOHOLD.held)return; AUDIOHOLD.held=true;
+  if(AUDIOHOLD.held)return; AUDIOHOLD.held=true; for(const n of Object.values(MUSIC.nodes))n.audio.pause();
   // 자리를 비운 사이에 죽지 않도록 진행 중인 러닝은 일시정지
   try{ if(typeof R!=='undefined'&&R&&!R.over&&!R.dead&&!R.paused&&typeof togglePause==='function')togglePause(); }catch(e){}
   try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(e){}
   try{ if(SFX.ac&&SFX.ac.state==='running')SFX.ac.suspend(); }catch(e){}
 }
 function audioRelease(){
-  if(!AUDIOHOLD.held)return; AUDIOHOLD.held=false;
-  try{ if(SFX.on&&SFX.ac&&SFX.ac.state==='suspended')SFX.ac.resume(); }catch(e){}
+  if(!AUDIOHOLD.held)return; AUDIOHOLD.held=false; if(MUSIC.on)for(const n of Object.values(MUSIC.nodes))n.audio.play().catch(()=>{MUSIC.stop();});
+  try{ if((SFX.on||MUSIC.on)&&SFX.ac&&SFX.ac.state==='suspended')SFX.ac.resume(); }catch(e){}
 }
 document.addEventListener('visibilitychange',()=>{ document.hidden?audioHold():audioRelease(); });
 window.addEventListener('pagehide',audioHold);

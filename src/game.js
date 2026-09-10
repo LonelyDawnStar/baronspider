@@ -69,7 +69,7 @@ function renderStory(){
       <div class="no"><small>ISSUE</small>#${is.n}</div><h3>${is.title}</h3><div class="env">${is.env} · ${is.bosses.length}회 보스</div>
       <div class="prog"><div class="bar"><i style="width:${prog/total*100}%"></i></div><span class="num">${prog}/${total}</span></div>
       ${locked?`<div class="env">이슈 #${i} 절반 클리어 필요 (${S.mdone['i'+(i-1)]||0}/${halfNeed(i-1)} · 보스 2명 포함)</div>`:done?'<div class="env" style="color:var(--green)">완료 · 재도전 가능</div>':''}</button>`;}).join('');
-  $('#issues').querySelectorAll('.issue').forEach(b=>b.onclick=()=>{S.issue=+b.dataset.i;if(S.issue<S.done.length&&S.done[S.issue])S.mission=S.mdone['i'+S.issue]??0;else S.mission=S.mdone['i'+S.issue]??0;save();renderStory();});
+  $('#issues').querySelectorAll('.issue').forEach(b=>b.onclick=()=>{S.issue=+b.dataset.i;if(S.issue<S.done.length&&S.done[S.issue])S.mission=S.mdone['i'+S.issue]??0;else S.mission=S.mdone['i'+S.issue]??0;save();renderStory();MUSIC.play('main');});
   const is=ISSUES[S.issue]; const total=missionCount(S.issue); const progI=Math.min(S.mdone['i'+S.issue]||0,total-1); if(S.mission>progI)S.mission=progI; const m=Math.min(S.mission,total-1); const ms=genMission(S.issue,m); const replay=m<(S.mdone['i'+S.issue]||0);
   $('#missionBox').innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><h3 style="font-size:20px;color:#fff">이슈 #${is.n} · ${is.title}</h3><span style="color:var(--dim);font-size:12px">${is.env}</span></div>
    <p class="lead" style="font-size:13px">${is.intro}</p><p class="lead" style="font-size:12px"><b>보스 기믹</b> — ${is.gimmick} · 보스는 <b>B</b> 미션에서만 등장 · 다음 이슈는 이 이슈를 절반(${halfNeed(S.issue)}개) 클리어하면 열림</p>
@@ -448,7 +448,7 @@ function showResult(canContinue,cleared,xp,msg){
   const again=$('#bAgain'); again.textContent=canContinue?'계속하기 (ISO-8 5)':'다시 달리기';
   again.onclick=()=>{ if(canContinue){S.iso-=5;R.continues++;R.dead=false;R.inv=2.5;R.objs=R.objs.filter(o=>o.z>4||o.type==='vial');$('#ovResult').classList.add('hidden');$('#stage').classList.add('playing');lastT=performance.now();raf=requestAnimationFrame(loop);renderRes();} else {const m=R.mode; R=null; startRun(m);} };
   $('#bBack').textContent=canContinue?'포기':'허브로';
-  $('#bBack').onclick=()=>{ if(canContinue){finish(false,'피격 — 러닝 종료');} else {R=null;$('#stage').classList.remove('playing');$('#ovResult').classList.add('hidden');$('#ovTitle').classList.remove('hidden');exitPlayMode();renderAll();startIdle();} };
+  $('#bBack').onclick=()=>{ if(canContinue){finish(false,'피격 — 러닝 종료');} else {R=null;$('#stage').classList.remove('playing');$('#ovResult').classList.add('hidden');$('#ovTitle').classList.remove('hidden');exitPlayMode();renderAll();startIdle();MUSIC.play('main');} };
   renderAll();
 }
 
@@ -756,30 +756,34 @@ const CODES={
   THWIP:{kind:'coupon',desc:'거미줄 쿠폰: 언커먼 이상 랜덤 카드 1장',run(){const pool=CHARS.filter(c=>c.r==='U'||c.r==='R');const c=pool[Math.floor(Math.random()*pool.length)];gain(c);return c.name+' 획득';}},
   ISO8:{kind:'coupon',desc:'ISO-8 50',run(){S.iso+=50;}},
 };
-function redeem(raw){
+function redeem(raw,kind='coupon'){
   const code=(raw||'').trim().toUpperCase().replace(/[\s-]/g,''); const c=CODES[code]; const out=$('#codeMsg');
-  if(!c){out.textContent='알 수 없는 코드입니다.';out.style.color='var(--red)';SFX.play('fail');return;}
+  if(!c||c.kind!==kind){out.textContent='알 수 없는 코드입니다.';out.style.color='var(--red)';SFX.play('fail');return;}
   S.redeemed=S.redeemed||[]; if(c.kind==='coupon'&&S.redeemed.includes(code)){out.textContent='이미 사용한 쿠폰입니다.';out.style.color='var(--red)';SFX.play('fail');return;}
   const r=c.run(); if(c.kind==='coupon')S.redeemed.push(code); save(); renderAll();
   out.textContent=(c.kind==='cheat'?'[치트] ':'[쿠폰] ')+(r||c.desc)+' — 적용됨'; out.style.color='var(--green)'; SFX.play('coin'); toast(c.kind==='cheat'?'CHEAT ON':'COUPON!');
 }
-$('#bCode').onclick=()=>{ const d=$('#dlg'); d.innerHTML=`<div class="dlg"><div class="hdr" style="--rc:var(--yellow)"><div><div class="rar" style="color:var(--ink);text-shadow:none">Codes</div><h3 style="color:var(--ink);text-shadow:none">치트 · 쿠폰 코드</h3></div></div>
-  <form id="codeForm" style="display:flex;gap:8px"><input id="codeIn" autocomplete="off" spellcheck="false" placeholder="코드 입력 (예: WEBHEAD)" style="flex:1;font:inherit;font-family:var(--mono);font-weight:700;text-transform:uppercase;padding:8px 10px;border:3px solid var(--ink);background:#fff;color:var(--ink);outline:none"><button class="btn sm amber" type="submit">적용</button></form>
-  <div id="codeMsg" style="font-size:13px;font-weight:700;min-height:1.4em"></div>
+function codeFields(){return `<form id="codeForm" style="display:flex;gap:8px"><input id="codeIn" autocomplete="off" placeholder="코드 입력" style="min-width:0;flex:1;padding:10px"><button class="btn sm amber">적용</button></form><div id="codeMsg" role="status"></div>`;}
+function codeTable(kind){return `<div class="tbl"><table>${Object.entries(CODES).filter(([k,v])=>v.kind===kind).map(([k,v])=>`<tr><td><button class="codebtn" data-code="${k}">${k}</button>${(S.redeemed||[]).includes(k)?' (사용됨)':''}</td><td>${v.desc}</td></tr>`).join('')}</table></div>`;}
+function bindCodes(kind){$('#codeForm').onsubmit=e=>{e.preventDefault();redeem($('#codeIn').value,kind);};$('#dlg').querySelectorAll('.codebtn').forEach(b=>b.onclick=()=>{redeem(b.dataset.code,kind);});}
+$('#bCode').onclick=()=>{const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>쿠폰</h3>${codeFields()}<details class="fold"><summary>쿠폰 목록</summary>${codeTable('coupon')}</details><button class="btn sm ghost" id="dClose">닫기</button></div>`;d.showModal();bindCodes('coupon');$('#dClose').onclick=()=>d.close();};
+$('#bSettings').onclick=()=>{
+ const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.13</h3>
+ <div class="sub-h">사운드</div><div class="actions"><label><input type="checkbox" id="setBgm" ${MUSIC.on?'checked':''}> BGM</label><label><input type="checkbox" id="setSfx" ${SFX.on?'checked':''}> 효과음</label><label><input type="checkbox" id="setVoice" ${VOICE.on?'checked':''}> 보스 보이스</label></div>
+ <label>배경음악 <select id="musicMode" style="width:100%;padding:10px;margin:8px 0">${[['auto','챕터에 맞춰 자동 변경',true],['main','기본 BGM 고정',true],['ultron','에이지 오브 울트론 고정',issueUnlocked(6)],['infinity','인피니티 워 고정',issueUnlocked(7)]].map(([k,n,ok])=>`<option value="${k}" ${MUSIC.mode===k?'selected':''} ${ok?'':'disabled'}>${n}${ok?'':' — 챕터 해금 필요'}</option>`).join('')}</select></label>
   <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="checkbox" id="ttsChk" ${VOICE.tts?'checked':''}> 보스 음성 대사(브라우저 TTS) 사용 — 기기에 <b>남성 한국어 음성</b>이 있을 때만 재생됩니다 (현재: ${VOICE.maleVoice()?'감지됨: '+VOICE.maleVoice().name:'남성 음성 없음 → 말풍선만 표시'})</label>
   <div id="ctrlbox"></div>
-  <details class="fold" id="cheatFold"><summary>테스트용 치트 · 쿠폰 코드</summary><div class="foldbody">
-  <div class="sub-h" style="font-size:16px;margin-top:0">테스트용 치트</div>
-  <div class="tbl"><table>${Object.entries(CODES).filter(([k,v])=>v.kind==='cheat').map(([k,v])=>`<tr><td class="num" style="font-weight:700;white-space:nowrap"><button class="codebtn" data-code="${k}" style="text-decoration:underline;font-weight:700;font-family:var(--mono)">${k}</button></td><td>${v.desc}</td></tr>`).join('')}</table></div>
-  <div class="sub-h" style="font-size:16px">쿠폰 (1회용)</div>
-  <div class="tbl"><table>${Object.entries(CODES).filter(([k,v])=>v.kind==='coupon').map(([k,v])=>`<tr><td class="num" style="font-weight:700;white-space:nowrap"><button class="codebtn" data-code="${k}" style="text-decoration:underline;font-weight:700;font-family:var(--mono)">${k}</button>${(S.redeemed||[]).includes(k)?' <span class="tag">사용됨</span>':''}</td><td>${v.desc}</td></tr>`).join('')}</table></div>
-  </div></details>
+<details class="fold"><summary>테스트용 치트</summary>${codeFields()}${codeTable('cheat')}</details>
   <div class="sub-h" style="font-size:16px;color:var(--redink)">데이터</div>
   <p class="lead" style="font-size:12px">진행도(카드·재화·스토리)와 설정(사운드·보이스·조작)을 모두 지우고 처음 상태로 되돌립니다. 되돌릴 수 없습니다.</p>
   <div class="actions"><button class="btn sm" id="dReset" style="background:var(--red)">완전 초기화</button><button class="btn sm ghost" id="dClose">닫기</button></div></div>`;
-  d.showModal(); renderCtrlUI(); $('#codeIn').focus(); $('#dReset').onclick=()=>hardReset(); $('#dClose').onclick=()=>d.close(); $('#ttsChk').onchange=e=>{VOICE.tts=e.target.checked; try{localStorage.setItem('wru_tts',VOICE.tts?'1':'0');}catch(_){} };
-  $('#codeForm').onsubmit=e=>{e.preventDefault();redeem($('#codeIn').value);};
-  d.querySelectorAll('.codebtn').forEach(b=>b.onclick=()=>{$('#codeIn').value=b.dataset.code;redeem(b.dataset.code);});
+
+ d.showModal();renderCtrlUI();bindCodes('cheat');
+ $('#dClose').onclick=()=>d.close();$('#dReset').onclick=()=>hardReset();
+ $('#setBgm').onchange=e=>{MUSIC.setOn(e.target.checked);renderBgmBtn();};
+ $('#setSfx').onchange=()=>$('#bMute').click();$('#setVoice').onchange=()=>$('#bVoice').click();
+ $('#musicMode').onchange=e=>MUSIC.setMode(e.target.value);
+ $('#ttsChk').onchange=e=>{VOICE.tts=e.target.checked;localStorage.setItem('wru_tts',VOICE.tts?'1':'0');};
 };
 
 // ===== 조작 설정 UI =====
@@ -804,7 +808,7 @@ function renderCtrlUI(){ const el=$('#ctrlbox'); if(!el)return;
 }
 
 // ===== 완전 초기화 =====
-const WRU_KEYS=[SAVE_KEY,'wru_sfx','wru_voice','wru_tts','wru_bgm','wru_ctrl','wru_vpitch','wru_vpack_url'];
+const WRU_KEYS=[SAVE_KEY,'wru_sfx','wru_voice','wru_tts','wru_bgm','wru_music_mode','wru_ctrl','wru_vpitch','wru_vpack_url'];
 function doReset(){
   try{ WRU_KEYS.forEach(k=>localStorage.removeItem(k)); }catch(e){}
   try{ localStorage.clear(); }catch(e){}
