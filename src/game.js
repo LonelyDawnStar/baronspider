@@ -378,7 +378,7 @@ function startBoss(){
   if(Math.random()<0.2&&R.mode==='unl')name=eventInfo().boss;
   R.bossSeen++;
   const hp=R.mode==='story'?8+R.issue*2+(R.ms.bossIdx||0)*2:8+R.issue+R.bossSeen;
-  MUSIC.play('boss',{fade:0.8}); const fam=FAM(name); R.boss={name,fam,hp,max:hp,t:40+R.mods.escTime,x:0,tx:0,phase:'intro',introT:2.4,taps:0,needTaps:10+R.issue*2,tapT:0,shot:0,bob:0,atk:2.8,hurtT:0,decoyT:0,lastTap:-9};
+  MUSIC.play('boss',{fade:0.8}); const fam=FAM(name); R.boss={name,fam,hp,max:hp,tmax:60+hp*1.6+R.mods.escTime,t:60+hp*1.6+R.mods.escTime,x:0,tx:0,phase:'intro',introT:2.4,taps:0,needTaps:10+R.issue*2,tapMax:5+(10+R.issue*2)*0.28,tapT:0,shot:0,bob:0,atk:2.8,hurtT:0,decoyT:0,lastTap:-9};
   $('#hBossName').textContent=name; $('#hBoss').classList.add('on'); FX.cutin(name); setTimeout(()=>{ if(R&&R.boss){ const b=R.boss; VOICE.boss(b.fam,'in').then(dur=>{ if(R&&R.boss===b&&dur>0)b.introT=Math.max(b.introT,0.35+dur+0.3); }); } },350); setHint('보스 등장…',2); R.hazards=[]; R.objs=R.objs.filter(o=>o.type==='vial'||o.type==='iso');
   R.objs=R.objs.filter(o=>o.type==='vial');
 }
@@ -400,7 +400,9 @@ function spawn(){
   if(seg==='run'||seg==='boss'){
     const r=Math.random(); const l=lanes[0];
     if(seg==='boss'&&R.boss&&R.boss.phase==='intro'){ /* 등장 중: 장애물 없음 */ }
-    else if(seg==='boss'&&R.boss&&R.boss.fam==='mysterio'){ if(Math.random()<0.55)push({type:'enemy',kind:'minion',lane:l,shot:false}); }
+    else if(seg==='boss'&&R.boss&&R.boss.fam==='mysterio'){ // 미니언과 폭탄을 함께 (폭탄이 없으면 체력을 깎을 수단이 없다)
+      if(Math.random()<0.45)push({type:'bomb',lane:l});
+      if(Math.random()<0.5)push({type:'enemy',kind:'minion',lane:lanes[1],shot:false}); }
     else if(seg==='boss'&&Math.random()<0.45){push({type:'bomb',lane:l});}
     else if(r<0.42){const kinds=['std','std','armed','armor','fly']; const k=kinds[Math.floor(Math.random()*Math.min(kinds.length,2+Math.floor(R.issue/1.5)+Math.floor(d/1200)))]; push({type:'enemy',kind:k,lane:l,shot:false});}
     else if(r<0.66){const ks=['low','high','wall']; push({type:'obs',kind:ks[Math.floor(Math.random()*3)],lane:l});}
@@ -533,10 +535,10 @@ function update(dt){
   // 보스
   if(R.boss){ const b=R.boss; b.bob+=dt; b.hurtT=Math.max(0,b.hurtT-dt); b.decoyT=Math.max(0,b.decoyT-dt); b.x+=(b.tx-b.x)*dt*2.2;
     if(b.phase==='intro'){ R.inv=Math.max(R.inv,0.5); b.introT-=dt; if(b.introT<=0){ b.phase='fight'; b.atk=1.2; setHint(FAM_INFO[b.fam],4); SFX.play('whoosh'); } }
-    else if(b.phase==='fight'){ b.t-=dt; $('#hBossT').style.width=(b.t/(40+R.mods.escTime)*100)+'%'; $('#hBossLbl2').textContent='도주 타이머'; $('#hBossT3').style.width='0%'; b.atk-=dt; if(b.atk<=0){ bossPattern(b); if(b.rng()<0.6)VOICE.boss(b.fam,'attack'); b.tx=(Math.floor(b.rng()*3)-1)*0.7; b.atk=2.4+b.rng()*1.4-Math.min(1.2,R.issue*0.18); }
+    else if(b.phase==='fight'){ b.t-=dt; $('#hBossT').style.width=(b.t/b.tmax*100)+'%'; $('#hBossLbl2').textContent='도주 타이머'; $('#hBossT3').style.width='0%'; b.atk-=dt; if(b.atk<=0){ bossPattern(b); if(b.rng()<0.6)VOICE.boss(b.fam,'attack'); b.tx=(Math.floor(b.rng()*3)-1)*0.7; b.atk=2.4+b.rng()*1.4-Math.min(1.2,R.issue*0.18); }
       if(b.fam==='other'||b.fam==='inheritor'){ b.shot+=dt; if(b.shot>3.2){b.shot=0;R.objs.push({type:'proj',lane:R.lane,z:12,hit:false,fast:true});} }
       if(b.t<=0)endBoss(false); }
-    else if(b.phase==='beat'){ R.inv=Math.max(R.inv,0.6); $('#hBossT').style.width=(Math.max(0,1-b.taps/b.needTaps)*100)+'%'; $('#hBossLbl2').textContent=`연타 게이지 ${b.taps}/${b.needTaps}`; $('#hBossT3').style.width=(Math.max(0,b.tapT/6)*100)+'%'; if(R.beat){ R.beat.t+=dt; const k=Math.min(1,R.beat.t/0.45); const e=1-Math.pow(1-k,3); R.beat.cur=e*9.6; R.beat.x=lerp(R.beat.x,b.x-0.55,dt*8); R.py=Math.max(0,0.5*Math.sin(k*Math.PI)); } b.tapT-=dt; if(b.taps>=b.needTaps&&b.phase==='beat'){ b.phase='finish'; b.finT=0; b.finT0=performance.now(); VOICE.boss(b.fam,'out'); impact(1.2,proj(b.x,1.4,14).x,proj(b.x,1.4,14).y,'#fff'); R.rgbSplit=0.4; SFX.play('boss'); SFX.play('clear'); const bp=proj(b.x,1.4,14); R.parts.push({x:bp.x,y:bp.y-60,t:0.9,c:'#fff',txt:'FINISH!',rot:-0.15}); for(let i=0;i<14;i++)R.parts.push({x:bp.x+rnd(-40,40),y:bp.y+rnd(-40,40),t:0.6,c:i%2?'#ffd23a':'#fff',dust:true,vx:rnd(-300,300)}); } else if(b.tapT<=0){ b.phase='fight'; b.hp=b.max; b.hurtT=0.3; b.atk=2.5; R.beat=null; R.inv=Math.max(R.inv,1.5); toast('RECOVERED!'); setHint('보스가 회복했다 — 다시 SHIELD 폭탄을!',3); SFX.play('fail'); VOICE.boss(b.fam,'rec'); } }
+    else if(b.phase==='beat'){ R.inv=Math.max(R.inv,0.6); $('#hBossT').style.width=(Math.max(0,1-b.taps/b.needTaps)*100)+'%'; $('#hBossLbl2').textContent=`연타 게이지 ${b.taps}/${b.needTaps}`; $('#hBossT3').style.width=(Math.max(0,b.tapT/b.tapMax)*100)+'%'; if(R.beat){ R.beat.t+=dt; const k=Math.min(1,R.beat.t/0.45); const e=1-Math.pow(1-k,3); R.beat.cur=e*9.6; R.beat.x=lerp(R.beat.x,b.x-0.55,dt*8); R.py=Math.max(0,0.5*Math.sin(k*Math.PI)); } b.tapT-=dt; if(b.taps>=b.needTaps&&b.phase==='beat'){ b.phase='finish'; b.finT=0; b.finT0=performance.now(); VOICE.boss(b.fam,'out'); impact(1.2,proj(b.x,1.4,14).x,proj(b.x,1.4,14).y,'#fff'); R.rgbSplit=0.4; SFX.play('boss'); SFX.play('clear'); const bp=proj(b.x,1.4,14); R.parts.push({x:bp.x,y:bp.y-60,t:0.9,c:'#fff',txt:'FINISH!',rot:-0.15}); for(let i=0;i<14;i++)R.parts.push({x:bp.x+rnd(-40,40),y:bp.y+rnd(-40,40),t:0.6,c:i%2?'#ffd23a':'#fff',dust:true,vx:rnd(-300,300)}); } else if(b.tapT<=0){ b.phase='fight'; b.hp=Math.max(1,Math.ceil(b.max/2)); b.hurtT=0.3; b.atk=2.5; R.beat=null; R.inv=Math.max(R.inv,1.5); toast('RECOVERED!'); setHint('보스가 회복했다 — 다시 SHIELD 폭탄을!',3); SFX.play('fail'); VOICE.boss(b.fam,'rec'); } }
     else if(b.phase==='finish'){ b.finT+=dt; R.inv=Math.max(R.inv,0.6); if(b.finT>1.3||performance.now()-(b.finT0||0)>2200)endBoss(true); }
   }
   updateZip(dt); updateTitan(dt);
@@ -555,7 +557,7 @@ function update(dt){
       if(o.type==='vial'){ const near=same||(R.mods.magnet&&Math.abs(R.px-(o.lane-1))<1.3)||R.uniT>0; if(near&&(R.seg!=='swing'||Math.abs((o.y||0)-R.py)<1.2)){o.hit=true;R.vials++;R.score+=10;SFX.play('vial',R.vials); if(R.vials%5===0){addCombo(1);R.msg='VIAL STREAK';R.msgT=0.4;} } }
       else if(o.type==='iso'){ if(same){o.hit=true;R.iso++;toast('ISO-8!');SFX.play('iso');} }
       else if(o.type==='fakebomb'){ if(same){o.hit=true;R.combo=0;R.msg='FAKE!';R.msgT=0.7;SFX.play('fail');R.parts.push({x:W/2,y:H*0.4,t:0.5,c:'#3fbf7a',big:true});} }
-      else if(o.type==='bomb'){ if(same&&R.boss&&R.boss.phase==='fight'){o.hit=true;R.boss.hp-=R.mods.bombDmg;R.boss.hurtT=0.35;R.score+=300;SFX.play('bomb');VOICE.boss(R.boss.fam,R.boss.hp<=0?'beat':'hurt');{ const bp=proj(R.boss.x,1.2,14); impact(0.6,bp.x,bp.y,'#2fd3e6'); R.parts.push({x:bp.x,y:bp.y,t:0.5,c:'#2fd3e6',big:true}); }addCombo(1);if(R.boss.hp<=0){R.boss.phase='beat';R.boss.tapT=6;R.boss.taps=0;R.beat={t:0,cur:0,x:R.px};R.zip=null;R.hazards=[];R.objs=R.objs.filter(o=>o.type==='vial');SFX.play('web');setHint(`연타! (탭 / 스페이스 / ↑) ×${R.boss.needTaps} — 파란 게이지를 비워라`,4);toast('FINISH HIM!');}} }
+      else if(o.type==='bomb'){ if(same&&R.boss&&R.boss.phase==='fight'){o.hit=true;R.boss.hp-=R.mods.bombDmg;R.boss.hurtT=0.35;R.score+=300;SFX.play('bomb');VOICE.boss(R.boss.fam,R.boss.hp<=0?'beat':'hurt');{ const bp=proj(R.boss.x,1.2,14); impact(0.6,bp.x,bp.y,'#2fd3e6'); R.parts.push({x:bp.x,y:bp.y,t:0.5,c:'#2fd3e6',big:true}); }addCombo(1);if(R.boss.hp<=0){R.boss.phase='beat';R.boss.tapT=R.boss.tapMax;R.boss.taps=0;R.beat={t:0,cur:0,x:R.px};R.zip=null;R.hazards=[];R.objs=R.objs.filter(o=>o.type==='vial');SFX.play('web');setHint(`연타! (탭 / 스페이스 / ↑) ×${R.boss.needTaps} — 파란 게이지를 비워라`,4);toast('FINISH HIM!');}} }
       else if(o.type==='ring'){ if(same&&(R.seg!=='swing'||Math.abs((o.y||1)-R.py)<1)){o.hit=true;SFX.play('ring');addCombo(1);R.score+=50;} }
       else if(o.type==='sign'){ if(same&&R.py>=o.band[0]&&R.py<=o.band[1]){o.hit=true;hitPlayer();} }
       else if(o.type==='proj'){ if(same&&R.state!=='slide'&&R.state!=='jump'){o.hit=true;hitPlayer();} else if(same){o.hit=true;addCombo(1);} }
@@ -611,9 +613,9 @@ function draw(){
       ctx.font=`900 15px ${disp}`; ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.lineWidth=4; ctx.strokeStyle=INK; ctx.fillStyle='#fff'; ctx.strokeText(b.name,0,-10); ctx.fillText(b.name,0,-10);
       const bar=(y,frac,col)=>{ ctx.fillStyle=INK; ctx.fillRect(-w/2-2,y-2,w+4,hh+4); ctx.fillStyle='#2b2f45'; ctx.fillRect(-w/2,y,w,hh); ctx.fillStyle=col; ctx.fillRect(-w/2,y,w*clamp(frac,0,1),hh); };
       bar(0,b.hp/b.max,'#e6202a');
-      if(b.phase==='beat'){ bar(hh+5,1-b.taps/b.needTaps,'#21c6de'); ctx.fillStyle='#ffd23a'; ctx.fillRect(-w/2,hh*2+10,w*clamp(b.tapT/6,0,1),2); ctx.font=`700 11px ${getComputedStyle(document.body).getPropertyValue('--mono')}`; ctx.fillStyle='#fff'; ctx.strokeText(`연타 ${b.taps}/${b.needTaps}`,0,hh*2+26); ctx.fillText(`연타 ${b.taps}/${b.needTaps}`,0,hh*2+26); }
+      if(b.phase==='beat'){ bar(hh+5,1-b.taps/b.needTaps,'#21c6de'); ctx.fillStyle='#ffd23a'; ctx.fillRect(-w/2,hh*2+10,w*clamp(b.tapT/b.tapMax,0,1),2); ctx.font=`700 11px ${getComputedStyle(document.body).getPropertyValue('--mono')}`; ctx.fillStyle='#fff'; ctx.strokeText(`연타 ${b.taps}/${b.needTaps}`,0,hh*2+26); ctx.fillText(`연타 ${b.taps}/${b.needTaps}`,0,hh*2+26); }
       else if(b.phase==='intro'){ ctx.fillStyle='#fff'; ctx.font=`700 11px ${getComputedStyle(document.body).getPropertyValue('--mono')}`; ctx.strokeText('등장 중 — 무적',0,hh+18); ctx.fillText('등장 중 — 무적',0,hh+18); }
-      else { bar(hh+5,b.t/(40+R.mods.escTime),'#21c6de'); }
+      else { bar(hh+5,b.t/b.tmax,'#21c6de'); }
       ctx.restore(); }
     if(R.bubble&&R.bubble.t>0){ R.bubble.t-=dtLast; const bb=R.bubble; const p=proj(b.x+1.0,4.4*(b.fam==='mysterio'?1.5:1),14); const k=Math.min(1,(2.4-bb.t)/0.15); ctx.save(); ctx.translate(p.x,p.y); ctx.scale(k,k); ctx.font=`700 15px ${getComputedStyle(document.body).getPropertyValue('--body')}`; const tw=Math.min(300,ctx.measureText(bb.txt).width+26); const lines=[]; { let s=bb.txt,cur=''; for(const ch of s){ if(ctx.measureText(cur+ch).width>tw-24){lines.push(cur);cur=ch;} else cur+=ch; } lines.push(cur); } const th=lines.length*20+14; const spiky=bb.kind==='out'||bb.kind==='beat';
       ctx.fillStyle='#fff'; ctx.strokeStyle=INK; ctx.lineWidth=3; ctx.beginPath(); if(spiky){ const n=18; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; const r=(i%2?1.0:1.18); ctx.lineTo(Math.cos(a)*(tw/2+10)*r,-th/2-8+Math.sin(a)*(th/2+10)*r); } ctx.closePath(); } else { ctx.roundRect(-tw/2,-th-8,tw,th,10); ctx.moveTo(-tw/2+18,-8); ctx.lineTo(-tw/2+6,14); ctx.lineTo(-tw/2+38,-8); } ctx.fill(); ctx.stroke();
