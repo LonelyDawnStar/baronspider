@@ -260,7 +260,13 @@ function bossPattern(b){ if(!b.rng)seedBossPattern(b); PR=b.rng; const hz=PATTER
   if(b.fam==='mysterio'&&b.rng()<0.7){ const l=Math.floor(b.rng()*3); R.objs.push({type:'fakebomb',lane:l,z:R.dist/2.2+ZF*0.8,hit:false}); } }
 function updateHazards(dt){
   for(const h of R.hazards){ if(!h.telAdj){h.telAdj=true;h.tel*=R.mods.telMul;} h.t+=dt; const act=h.t>=h.tel&&h.t<h.tel+h.dur;
-    if(act&&!h.done&&h.lanes.includes(R.lane)&&Math.abs(R.px-(R.lane-1))<0.5){ const evade=h.kind==='low'?(R.state==='jump'&&R.py>0.4):h.kind==='high'?R.state==='slide':false; if(!evade){h.done=true; if(h.soft)softHit(); else hitPlayer();} else if(!h.evaded){h.evaded=true;addCombo(1);R.msg='NICE DODGE';R.msgT=0.6;} }
+    // 회피 판정: 활성 직전 0.16초부터 받아주고, 한 번 피하면 그 해저드는 끝(래치).
+    // 예전에는 활성 구간 내내 공중/슬라이드를 유지해야 해서 사실상 피할 수 없었다.
+    const inWin=h.t>=h.tel-0.16&&h.t<h.tel+h.dur;
+    if(inWin&&!h.done&&h.lanes.includes(R.lane)&&Math.abs(R.px-(R.lane-1))<0.5){
+      const evade=h.kind==='low'?(R.state==='jump'&&R.py>0.25):h.kind==='high'?R.state==='slide':false;
+      if(evade){ h.done=true; if(!h.evaded){h.evaded=true;addCombo(1);R.msg='NICE DODGE';R.msgT=0.6;} }
+      else if(h.t>=h.tel){ h.done=true; if(h.soft)softHit(); else hitPlayer(); } }
     if(h.t>=h.tel&&!h.sfx){h.sfx=true;SFX.play(h.kind==='strike'?'bomb':'whoosh');R.shake=Math.max(R.shake,0.25);} }
   R.hazards=R.hazards.filter(h=>h.t<h.tel+h.dur+0.4);
 }
