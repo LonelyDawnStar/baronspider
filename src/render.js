@@ -310,9 +310,36 @@ const PATTERNS={
     return [{kind:'low',lanes:[0,1,2],tel:0.9,dur:0.45,vis:'shockL'},...order.slice(0,2).map((l,i)=>({kind:'strike',lanes:[l],tel:1.8+i*0.45,dur:0.6,vis:'nano'}))]; },
   other(b){ return [{kind:'strike',lanes:[Math.floor(PR()*3)],tel:1.1,dur:0.5,vis:'debris'}]; },
 };
-function bossPattern(b){ if(!b.rng)seedBossPattern(b); PR=b.rng; const hz=PATTERNS[b.fam](b); PR=Math.random; hz.forEach(h=>{h.t=0;h.fam=b.fam;h.done=false;h.tel*=(b.telK||1);R.hazards.push(h);});
-  if(b.droneT){ b.droneT=0; const n=b.fam==='ultron4'?2:1; for(let i=0;i<n;i++){ const l=Math.floor(b.rng()*3); R.objs.push({type:'enemy',kind:'sentry',lane:l,shot:false,z:R.dist/2.2+ZF*(0.75+i*0.12),hit:false,passed:false}); } }
-  if(b.fam==='mysterio'&&b.rng()<0.7){ const l=Math.floor(b.rng()*3); R.objs.push({type:'fakebomb',lane:l,z:R.dist/2.2+ZF*0.8,hit:false}); } }
+// Finish each attack before scheduling another; particles may continue fading.
+const isUltronBoss=b=>!!b&&/^ultron[1-4]$/.test(b.fam);
+function bossPatternBusy(b){
+  return R.hazards.some(h=>h.t<h.tel+h.dur+0.4)||
+    (isUltronBoss(b)&&R.objs.some(o=>o.type==='enemy'&&o.kind==='sentry'&&!o.hit&&!o.passed&&o.z-R.dist/2.2>-.5));
+}
+function bossPattern(b){
+  if(bossPatternBusy(b))return;
+  if(!b.rng)seedBossPattern(b);
+  // Drones occupy a separate recovery wave, never the only safe attack lane.
+  if(isUltronBoss(b)&&b.pendingDrones){
+    const n=b.pendingDrones;b.pendingDrones=0;
+    for(let i=0;i<n;i++)R.objs.push({type:'enemy',kind:'sentry',lane:Math.floor(b.rng()*3),shot:false,z:R.dist/2.2+ZF*(0.75+i*0.12),hit:false,passed:false});
+    return;
+  }
+  PR=b.rng;let hz;try{hz=PATTERNS[b.fam](b);}finally{PR=Math.random;}
+  let previousEnd=0;
+  hz.sort((a,b)=>a.tel-b.tel).forEach(h=>{
+    h.t=0;h.fam=b.fam;h.done=false;
+    h.tel*=(b.telK||1)*R.mods.telMul;h.telAdj=true;
+    if(isUltronBoss(b)){
+      // Apply recovery AFTER difficulty modifiers. Allow landing / a full slide.
+      h.tel=Math.max(h.tel,previousEnd?previousEnd+0.45:0.9);
+      previousEnd=h.tel+h.dur;
+    }
+    R.hazards.push(h);
+  });
+  if(b.droneT){b.droneT=0;b.pendingDrones=b.fam==='ultron4'?2:1;}
+  if(b.fam==='mysterio'&&b.rng()<0.7){const l=Math.floor(b.rng()*3);R.objs.push({type:'fakebomb',lane:l,z:R.dist/2.2+ZF*0.8,hit:false});}
+}
 function updateHazards(dt){
   for(const h of R.hazards){ if(!h.telAdj){h.telAdj=true;h.tel*=R.mods.telMul;} h.t+=dt; const act=h.t>=h.tel&&h.t<h.tel+h.dur;
     // 회피 판정: 활성 직전 0.16초부터 받아주고, 한 번 피하면 그 해저드는 끝(래치).
