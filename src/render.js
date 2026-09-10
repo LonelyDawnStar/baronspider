@@ -246,7 +246,7 @@ function drawUltronRevision(fam,t){
 }
 
 // Patch 0.3: conservative animated silhouette bounds in model coordinates.
-const BOSS_TOP={proxima:215,corvus:225,cull:205,maw:210,thanos0:200,goblin:185,vulture:215,electro:210,sand:180,ock:180,mysterio:165,inheritor:180,ultron1:195,ultron2:195,ultron3:205,ultron4:215,other:165};
+const BOSS_TOP={proxima:250,corvus:270,cull:265,maw:230,thanos0:240,goblin:185,vulture:215,electro:210,sand:180,ock:180,mysterio:165,inheritor:180,ultron1:195,ultron2:195,ultron3:205,ultron4:215,other:165};
 function bossModelScale(b,projectionScale){return projectionScale*3.1*(b.fam==='mysterio'?1.7:1);}
 function bossHudAnchor(b){
   const p=proj(b.x,0.5,14);
@@ -255,7 +255,18 @@ function bossHudAnchor(b){
 }
 // Issue 8: original Canvas silhouettes; no imported picture assets.
 // Patch 0.7: articulated, individually proportioned figures; flat layered geometry only.
-function drawInfinityBoss(fam,t){
+// Patch 0.8: derive pose from the live hazard clock; no extra timers or attack logic.
+function infinityMotion(b){
+ const pose={wind:0,strike:0,vis:''};
+ if(!b||b.phase!=='fight'||typeof R==='undefined'||!R)return pose;
+ const h=R.hazards.find(h=>h.fam===b.fam&&h.t>=h.tel-0.6&&h.t<h.tel+0.5);
+ if(!h)return pose;const d=h.t-h.tel;pose.vis=h.vis;
+ if(d<0)pose.wind=Math.min(1,(d+0.6)/0.6);
+ else {pose.wind=Math.max(0,1-d/0.13);pose.strike=d<0.13?d/0.13:Math.max(0,1-(d-0.13)/0.37);}
+ return pose;
+}
+function drawInfinityBoss(fam,t,b){
+ const motion=infinityMotion(b),wind=motion.wind,hit=motion.strike;
  const pro=fam==='proxima',cor=fam==='corvus',cull=fam==='cull',maw=fam==='maw',th=fam==='thanos0';
  const skin=pro?'#afb7c7':cor?'#9eaaa3':cull?'#778064':maw?'#adbfc6':'#9b7db7';
  const armor=pro?'#7d8c9c':cor?'#46494b':cull?'#454953':maw?'#586674':'#414659';
@@ -264,7 +275,7 @@ function drawInfinityBoss(fam,t){
  const line=(p,c=light,w=1.3)=>{ctx.beginPath();p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=c;ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();};
  const plate=(p,c=armor)=>{poly(p,c);line(p.slice(0,3),shade(c,.4));};
  const heavy=cull||th,sh=heavy?39:maw?20:25,hip=heavy?22:14,neck=-139,hy=heavy?-159:-158;
- ctx.save();if(maw)ctx.translate(0,-10+Math.sin(t*1.5)*3);
+ ctx.save();ctx.rotate(Math.sin(t*1.4)*.008+(hit*.035-wind*.018));ctx.translate(hit*3,wind*2);if(maw)ctx.translate(0,-10+Math.sin(t*1.5)*3);
  // Back layers: long fabric panels and swept hair have distinct silhouettes.
  if(cor){poly([[-24,-132],[-36,-82],[-43,-3],[-25,-13],[-19,5],[-5,-11],[10,1],[25,-11],[37,-4],[26,-124]],'#242a30');for(let i=-2;i<=2;i++)line([[i*9,-110],[i*13,-22]],'#44494b',2);}
  if(maw){poly([[-23,-125],[-29,-45],[-23,-10],[-4,-29],[0,-80],[6,-25],[27,-8],[29,-49],[20,-125]],'#37424d');}
@@ -294,8 +305,18 @@ function drawInfinityBoss(fam,t){
   ctx.restore();
  }
  if(maw){for(const side of[-1,1]){ctx.save();ctx.scale(side,1);plate([[7,-136],[19,-129],[22,-96],[26,-37],[11,-48],[5,-78]],'#8797a0');line([[11,-124],[13,-80],[19,-47]],'#c6d2d5',1.5);ctx.restore();}for(let i=0;i<7;i++)line([[-3,-129+i*7],[3,-129+i*7]],gold,2);}
+ const armAngle=side=>{
+   const idle=Math.sin(t*1.7+side)*.025;
+   if(pro)return idle+(side>0?wind*.4-hit*.85:wind*.2-hit*.35);
+   if(cor)return idle+(side<0?-wind*.35+hit*1.05:hit*.2);
+   if(cull)return idle+(side>0?-wind*1.75+hit*.45:wind*.18);
+   if(maw)return idle+(side>0?wind*.25-hit*.9:-wind*.3+hit*.35);
+   return idle+(side<0?wind*.25+hit*1.4:-wind*.3-hit*.2);
+ };
+ const pivotArm=side=>{ctx.translate(side*sh,-128);ctx.rotate(armAngle(side));ctx.translate(-side*sh,128);};
  // Arms: angled upper arm, forearm, cuff and individually drawn fingers.
  for(const side of[-1,1]){let sx=side*sh,ex=side*(heavy?54:37),ey=maw&&side>0?-128:-105,hx=side*(heavy?60:44),handY=maw&&side>0?-151:-81,w=heavy?12:7;
+  ctx.save();pivotArm(side);
   poly([[sx-w,-128],[sx+w,-125],[ex+w,ey],[ex-w,ey+5]],heavy?skin:deep);
   if(!th)plate([[sx-w,-128],[sx+w,-126],[ex+w-2,ey-3],[ex-w+2,ey]],armor);
   if(heavy){line([[sx+side*3,-118],[ex+side*4,ey-4]],shade(skin,.25),2);}
@@ -309,25 +330,40 @@ function drawInfinityBoss(fam,t){
    plate([[-8,-7],[6,-14],[ww,-9],[ww+3,3],[13,9],[-8,4]],pro&&side>0?gold:armor);
    line([[-3,-8],[7,-10],[ww-3,-5]],heavy?gold:light,2);
    if(cull&&side<0)for(let j=0;j<2;j++)plate([[3,6+j*6],[22,3+j*6],[23,10+j*6],[6,13+j*6]],'#424651');ctx.restore();}
+  ctx.restore();
  }
  // Sculpted heads, brows, nose and jaw: no rounded hero head underneath.
  poly([[-7,-143],[-6,-129],[6,-129],[7,-143]],skin);
- const hw=heavy?20:maw?12:14;
- plate([[-hw,hy-8],[-hw+4,hy-22],[-5,hy-27],[8,hy-25],[hw,hy-15],[hw,hy+4],[hw-7,hy+16],[0,hy+20],[-hw+5,hy+12]],skin);
- poly([[2,hy-24],[hw-2,hy-14],[hw-1,hy+3],[hw-8,hy+15],[3,hy+18],[7,hy+1]],shade(skin,-.21),0);
- line([[-hw+4,hy-5],[-5,hy-7],[-3,hy-3]],shade(skin,-.5),2.5);line([[3,hy-3],[6,hy-7],[hw-3,hy-5]],shade(skin,-.5),2.5);
- line([[-hw+5,hy-2],[-6,hy-1]],cull?'#e9d67a':'#e4e8dc',1.7);line([[6,hy-1],[hw-4,hy-2]],cull?'#e9d67a':'#e4e8dc',1.7);
- line([[0,hy-4],[-2,hy+5],[3,hy+6]],shade(skin,-.4),1.6);
- line([[-6,hy+10],[1,hy+11],[7,hy+9]],shade(skin,-.5),1.7);
- if(th){for(let x=-11;x<=11;x+=4)line([[x,hy+13],[x*.8,hy+18]],'#5f4679',1.2);line([[-12,hy-17],[0,hy-19],[12,hy-16]],'#b99bd0',1.5);}
+ // Patch 0.9: individual facial planes and expressions, including attack tension.
+ const hw=cull?23:th?21:maw?12:14;
+ const jaw=cull?17:th?16:maw?6:cor?7:8, chin=maw?22:cor?22:18;
+ plate([[-hw,hy-8],[-hw+4,hy-22],[-5,hy-27],[8,hy-25],[hw,hy-15],[hw,hy+5],[jaw,hy+15],[jaw-3,hy+chin],[-jaw+3,hy+chin],[-jaw,hy+13]],skin);
+ poly([[3,hy-23],[hw-2,hy-14],[hw-1,hy+4],[jaw-1,hy+14],[3,hy+chin-1],[6,hy]],shade(skin,-.3),0);
+ const faceDark=shade(skin,cor?-.62:-.53),eye= cull?'#cbb766':cor?'#dadbc5':pro?'#c3d1da':'#d6d6c8';
+ for(const side of[-1,1]){ctx.save();ctx.translate(0,hy);ctx.scale(side,1);
+  // Inner ends sit lower than outer ends: stern brows instead of worried arches.
+  const inner=maw?-3:1+hit*.6,outer=maw?-5:cull?-8:th?-6:-7;
+  poly([[3,inner-3],[hw-3,outer-3],[hw-2,outer+4],[5,inner+4]],faceDark,0);
+  line([[5,inner+1],[hw-5,outer+3]],eye,maw?1:1.4);
+  line([[3,inner-3],[hw-3,outer-3]],shade(skin,-.65),maw?1.4:cull?3.5:2.5);
+  if(cor||maw){poly([[hw-3,3],[6,7],[7,14],[hw-4,8]],shade(skin,-.42),0);line([[hw-4,1],[6,6]],shade(skin,.12),1);}
+  else line([[hw-4,4],[hw-7,8]],shade(skin,-.35),1.4);
+  ctx.restore();
+ }
+ line([[0,hy-4],[-2,hy+5],[3,hy+5]],shade(skin,-.48),1.6);
+ if(pro){line([[-7,hy+12],[-3,hy+10],[5,hy+10],[8,hy+12]],faceDark,1.8);line([[-4,hy+14],[4,hy+14]],shade(skin,.16),1);}
+ if(cor){line([[-7,hy+14],[-4,hy+10],[4,hy+10],[7,hy+14]],faceDark,1.8);line([[0,hy+14],[0,hy+19]],shade(skin,-.32),1);}
+ if(cull){poly([[-12,hy+13],[-9,hy+9],[9,hy+9],[12,hy+13],[7,hy+15],[-8,hy+15]],shade(skin,-.57),0);line([[-8,hy+12],[8,hy+12]],'#949b7c',1.4);for(const side of[-1,1])line([[side*3,hy-15],[side*2,hy-8]],faceDark,2);}
+ if(maw){line([[-6,hy+13],[4,hy+13],[7,hy+14]],faceDark,1.6);line([[-5,hy+17],[3,hy+18]],shade(skin,-.27),1);}
+ if(th){line([[-10,hy+12],[-7,hy+10],[7,hy+10],[11,hy+13]],faceDark,2.2);line([[-6,hy+14],[7,hy+14]],shade(skin,.18),1.1);for(let x=-10;x<=10;x+=4)line([[x,hy+15],[x,hy+18]],'#594169',1.3);for(const side of[-1,1])line([[side*4,hy-16],[side*2,hy-10]],'#654b7a',1.5);line([[-11,hy-20],[0,hy-21],[11,hy-19]],'#b99bd0',1.2);}
  if(cull){for(const side of[-1,1])plate([[side*13,hy-14],[side*19,hy-26],[side*23,hy-7],[side*15,hy+2]],'#5e684b');for(let j=0;j<3;j++)line([[-9+j*8,hy-18],[-5+j*7,hy-12]],'#adb396',2);}
  if(cor||pro){for(const side of[-1,1])plate([[side*10,hy-9],[side*16,hy-19],[side*20,hy-32],[side*23,hy-12],[side*14,hy+7]],cor?'#7e806b':'#363f4d');}
  if(maw){line([[-7,hy-18],[0,hy-21],[7,hy-18]],'#d5dfe1',2);line([[-9,hy+4],[-7,hy+12],[-3,hy+16]],'#6a7a85',1.5);}
  // Weapons and loose details are drawn last with finite geometry.
- if(pro){line([[-64,-158],[70,-65]],'#161d28',6);line([[-64,-158],[70,-65]],gold,3);plate([[-64,-158],[-90,-187],[-78,-157],[-57,-149]],'#71c4d5');line([[-85,-179],[-64,-158]],'#d5ffff',1.5);}
- if(cor){line([[-48,0],[-54,-172]],'#393a34',7);line([[-48,0],[-54,-172]],gold,3);plate([[-55,-158],[-70,-213],[-48,-188],[-43,-168]],'#a9ab8b');poly([[-57,-185],[-62,-204],[-51,-187]],'#e0dfbd',1);plate([[-51,-174],[-33,-163],[-28,-176],[-27,-156],[-41,-151]],'#929777');}
- if(cull){line([[58,-80],[77,-29]],gold,7);plate([[57,-49],[82,-63],[98,-39],[72,-21]],'#454c58');plate([[60,-49],[81,-59],[86,-49],[66,-39]],'#7c8691');line([[73,-48],[87,-38]],'#bdc7c7',2);}
- if(maw)for(let i=0;i<4;i++){const x=(i<2?-1:1)*(48+i%2*11),y=-88-i%2*47+Math.sin(t*1.6+i)*5;ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(t+i)*.15);plate([[-7,-9],[6,-12],[11,3],[-3,10]],'#687887');poly([[1,-10],[6,-11],[10,3],[3,7]],'#475462',0);ctx.restore();}
+ if(pro){ctx.save();pivotArm(1);line([[-64,-158],[70,-65]],'#161d28',6);line([[-64,-158],[70,-65]],gold,3);plate([[-64,-158],[-90,-187],[-78,-157],[-57,-149]],'#71c4d5');line([[-85,-179],[-64,-158]],'#d5ffff',1.5);ctx.restore();}
+ if(cor){ctx.save();pivotArm(-1);line([[-48,0],[-54,-172]],'#393a34',7);line([[-48,0],[-54,-172]],gold,3);plate([[-55,-158],[-70,-213],[-48,-188],[-43,-168]],'#a9ab8b');poly([[-57,-185],[-62,-204],[-51,-187]],'#e0dfbd',1);plate([[-51,-174],[-33,-163],[-28,-176],[-27,-156],[-41,-151]],'#929777');ctx.restore();}
+ if(cull){ctx.save();pivotArm(1);line([[58,-80],[77,-29]],gold,7);plate([[57,-49],[82,-63],[98,-39],[72,-21]],'#454c58');plate([[60,-49],[81,-59],[86,-49],[66,-39]],'#7c8691');line([[73,-48],[87,-38]],'#bdc7c7',2);ctx.restore();}
+ if(maw)for(let i=0;i<4;i++){const x=(i<2?-1:1)*(48+i%2*11),y=-88-i%2*47+Math.sin(t*1.6+i)*5-wind*15+hit*28;ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(t+i)*.15);plate([[-7,-9],[6,-12],[11,3],[-3,10]],'#687887');poly([[1,-10],[6,-11],[10,3],[3,7]],'#475462',0);ctx.restore();}
  ctx.restore();
 }
 
@@ -337,7 +373,7 @@ function drawBossModel(b,s,t){
   ctx.save(); ctx.scale(s,s); ctx.translate(0,bob); const shieldPulse=Math.max(0,1-(t-(b.shieldHitAt??-99))/0.22); if(shieldPulse)ctx.translate(0,-3*Math.sin(shieldPulse*Math.PI)); if(flash){ctx.globalAlpha*=0.7;}
   const P=poseFor('idle',t*1.3,{override:{lArm:0.6,rArm:0.6,armsUp:0.3,lSpread:0.4,rSpread:0.4}}); P.face='front';
   switch(fam){
-    case 'proxima': case 'corvus': case 'cull': case 'maw': case 'thanos0': drawInfinityBoss(fam,t);break;
+    case 'proxima': case 'corvus': case 'cull': case 'maw': case 'thanos0': drawInfinityBoss(fam,t,b);break;
     case 'goblin': { // 글라이더
       ctx.save(); ctx.translate(0,8); ctx.rotate(Math.sin(t*2)*0.06); inkPath(()=>{ctx.moveTo(-130,0);ctx.quadraticCurveTo(-90,-40,-30,-10);ctx.lineTo(30,-10);ctx.quadraticCurveTo(90,-40,130,0);ctx.lineTo(90,18);ctx.lineTo(40,6);ctx.lineTo(0,26);ctx.lineTo(-40,6);ctx.lineTo(-90,18);},c2,6); ctx.fillStyle=c1; ctx.beginPath(); ctx.arc(-110,4,5,0,7); ctx.arc(110,4,5,0,7); ctx.fill(); ctx.fillStyle='#ff9a2b'; ctx.beginPath(); ctx.moveTo(-20,26); ctx.lineTo(0,50+Math.random()*14); ctx.lineTo(20,26); ctx.fill(); ctx.restore();
       drawHero(0,0,1,c1,c2,P,{extra:({headY})=>{ inkPath(()=>{ctx.moveTo(-18,headY-6);ctx.lineTo(-6,headY-46);ctx.lineTo(0,headY-14);ctx.lineTo(6,headY-46);ctx.lineTo(18,headY-6);},c2,4); ctx.fillStyle=c1==='#ffd23a'?'#fff':'#ffd23a'; ctx.beginPath(); ctx.ellipse(-7,headY-2,4,6,0,0,7); ctx.ellipse(7,headY-2,4,6,0,0,7); ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,headY+6,8,0.2,Math.PI-0.2); ctx.stroke(); }}); break; }
