@@ -124,6 +124,122 @@ const FAM_INFO={goblin:'녹색 가스 구름과 펌킨 폭탄을 차선에 깐�
  ultron4:'분해된 나노 조각이 차선을 훑고, 코어가 전 차선 충격파를 쏜다 — 점프와 슬라이드를 번갈아. 예고가 매우 짧다',
  other:'투사체와 차선 강타'};
 
+// Canvas-built robot armor. All four variants share joints, but have distinct silhouettes.
+function drawUltronRevision(fam,t){
+  const mk=fam==='ultron1', comic=fam==='ultron2', prime=fam==='ultron3', ultimate=fam==='ultron4';
+  const metal=mk?'#909da8':comic?'#c0cbd5':prime?'#899daa':'#b5c5d2';
+  const dark='#263440', light='#e7f2f6', red=mk?'#fa694a':'#ff3549';
+  const poly=(points,fill=metal,width=2)=>inkPath(()=>points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)),fill,width);
+  const line=(points,col,width=2)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=col;ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();};
+  const plate=(points,base=metal)=>{poly(points,base);line(points.slice(0,3),light,1.2);};
+  const joint=(x,y,r)=>{blob(x,y,r,r,dark,2);blob(x,y,r*.5,r*.5,'#637886',1);};
+  const glow=(points,col=red,width=2.5)=>{line(points,col,width+3);line(points,'#ffced0',width*.4);};
+  const bone=(a,b,w)=>{line([a,b],INK,w+3);line([a,b],dark,w);line([[a[0]-1,a[1]],[b[0]-1,b[1]]],'#9bb1bd',2);};
+  ctx.save();
+  // Preserve the compact game footprint: feet sit at the same origin as other humanoids.
+  if(prime)ctx.translate(0,-8+Math.sin(t*1.6)*3);
+  if(ultimate)ctx.scale(1.12,1.12);
+  if(mk)ctx.rotate(Math.sin(t*2)*.025);
+  // Final form: a split cape, independent of attack particles.
+  if(ultimate){
+    const wave=Math.sin(t*1.7)*7;
+    poly([[-30,-126],[-47,-110],[-64,9],[-38,1],[-17,23],[-8,-88]],'#862237',3);
+    poly([[30,-126],[48,-108],[72+wave,12],[44,2],[22,22],[9,-88]],'#b72f43',3);
+    line([[34,-110],[43,-35],[57+wave,5]],'#ec6570',2);
+    line([[-35,-112],[-44,-38],[-55,2]],'#4d1829',4);
+  }
+  // Six articulated back arms retain the Prime's visual attack identity.
+  if(prime)for(let i=0;i<6;i++){
+    const side=i<3?-1:1,j=i%3, sway=Math.sin(t*1.3+i)*6;
+    const a=[side*22,-109],b=[side*(58+j*6),-132+j*31],c=[side*(91+j*9),-155+j*47+sway];
+    bone(a,b,8);bone(b,c,7);joint(b[0],b[1],5);
+    for(let k=1;k<5;k++){const q=k/5;line([[b[0]+(c[0]-b[0])*q-2,b[1]+(c[1]-b[1])*q-2],[b[0]+(c[0]-b[0])*q+2,b[1]+(c[1]-b[1])*q+2]],'#b1c9d6',1);}
+    poly([[c[0]-5,c[1]+4],[c[0]-7,c[1]-8],[c[0],c[1]-13],[c[0]+7,c[1]-8],[c[0]+5,c[1]+4]],dark);
+    glow([[c[0],c[1]-6],[c[0],c[1]]],'#68d9ee',2);
+  }
+  if(ultimate)for(let i=0;i<8;i++){
+    const a=t*.6+i*Math.PI/4,x=Math.cos(a)*85,y=-68+Math.sin(a)*48;
+    ctx.save();ctx.translate(x,y);ctx.rotate(a);poly([[-3,-5],[4,-3],[3,5],[-4,2]],i%3?dark:red,1);ctx.restore();
+  }
+  // Legs: exposed knee pivots, inset pistons, separate shin and thigh armor.
+  for(const side of[-1,1]){
+    const hx=side*12,kx=side*(mk?17:22),fx=side*(mk?20:27);
+    bone([hx,-67],[kx,-35],mk?7:11);bone([kx,-35],[fx,-5],mk?6:10);
+    joint(hx,-66,6);joint(kx,-34,5);
+    if(!mk||side===1){
+      plate([[hx-7,-64],[hx+8,-63],[kx+7,-42],[kx,-38],[kx-7,-43]]);
+      plate([[kx-6,-27],[kx+7,-29],[fx+7,-8],[fx-7,-6]]);
+      line([[kx,-24],[fx+1,-11]],dark,3);
+    }else{for(let y=-59;y<-40;y+=6)line([[hx-4,y],[hx+5,y+1]],'#b6c3cb',2);}
+    plate([[fx-7,-7],[fx+6,-7],[fx+11,1],[fx-9,1]],mk?dark:metal);
+    if(!mk)glow([[hx+side*3,-57],[kx+side*3,-45]],red,1.4);
+  }
+  // Mechanical waist, spine and overlapping abdominal plates.
+  bone([0,-112],[0,-62],12);
+  for(let y=-103;y<-65;y+=7)line([[-9,y],[9,y]],'#8799a4',2);
+  for(const side of[-1,1]){bone([side*20,-109],[side*10,-65],4);joint(side*10,-66,5);}
+  plate([[-16,-69],[0,-74],[16,-69],[10,-57],[0,-54],[-10,-57]],dark);
+  if(mk){
+    plate([[-25,-121],[-4,-119],[-6,-105],[-18,-97],[-28,-107]]);
+    plate([[5,-121],[23,-122],[28,-109],[16,-98],[6,-105]],'#7f929e');
+    for(let i=0;i<4;i++)line([[-17,-99+i*6],[-7,-96+i*6],[7,-98+i*6],[17,-102+i*6]],'#768c97',2);
+    for(const side of[-1,1]){ctx.beginPath();ctx.moveTo(side*20,-107);ctx.bezierCurveTo(side*41,-95,side*34,-73,side*13,-69);ctx.strokeStyle='#566d79';ctx.lineWidth=2;ctx.stroke();}
+    plate([[-24,-121],[-15,-122],[-18,-111],[-26,-108]],'#913c42');
+  }else{
+    for(let i=0;i<3;i++){const y=-98+i*10,w=17-i*2;
+      plate([[-w,y],[0,y+3],[w,y],[w-2,y+9],[0,y+13],[-w+2,y+9]],i%2?shade(metal,-.18):metal);
+    }
+    for(const side of[-1,1]){
+      ctx.save();ctx.scale(side,1);
+      plate([[2,-123],[20,-130],[32,-119],[27,-104],[10,-99],[3,-106]]);
+      poly([[7,-120],[20,-125],[27,-118],[21,-115]],'#eef8fa',1);
+      line([[8,-106],[22,-111],[28,-119]],dark,2);
+      glow([[10,-113],[23,-119]],red,1.5);
+      ctx.restore();
+    }
+    poly([[0,-113],[7,-104],[0,-96],[-7,-104]],dark,2);
+    glow([[0,-108],[0,-101]],red,2);
+  }
+  // Arms use their own mechanical silhouette instead of the rounded hero rig.
+  for(const side of[-1,1]){
+    const sy=-119,ex=side*(mk?37:44),ey=-95+Math.sin(t*1.5+side)*2;
+    const hx=side*(mk?37:53),hy=mk?-72:-80+Math.sin(t*1.5+side)*2;
+    bone([side*26,sy],[ex,ey],mk?7:11);bone([ex,ey],[hx,hy],mk?6:10);
+    joint(side*27,sy,7);joint(ex,ey,5);
+    ctx.save();ctx.translate(side*27,sy);ctx.scale(side,1);
+    if(!mk||side===-1)plate([[-5,-7],[9,-11],[19,-2],[16,10],[5,12],[-6,4]],mk?'#98444b':metal);
+    if(!mk){line([[1,-5],[8,-7],[15,-1]],light,1.5);line([[4,6],[13,5]],dark,2);}
+    ctx.restore();
+    if(!mk||side===1)plate([[ex-5,ey+3],[ex+6,ey+1],[hx+7,hy-4],[hx-7,hy-2]],mk?'#81454c':metal);
+    joint(hx,hy,5);
+    // Three segmented digits remain readable at gameplay size.
+    for(let f=0;f<3;f++){
+      const x=hx+(f-1)*4,dy=hy+5+f%2*2;
+      line([[x,hy+2],[x+side*2,dy],[x+side,dy+5]],metal,2.4);
+    }
+    if(!mk)blob(hx,hy,2,2,red,1);
+    if(mk){ctx.beginPath();ctx.moveTo(ex,ey-8);ctx.quadraticCurveTo(ex+side*13,ey+8,hx+side*5,hy+6);ctx.strokeStyle='#60717c';ctx.lineWidth=1.5;ctx.stroke();}
+  }
+  // Neck with visible stacked servo rings.
+  bone([0,-122],[0,-139],9);for(let y=-136;y<-124;y+=4)line([[-5,y],[5,y]],'#b5c8d2',1.3);
+  ctx.save();ctx.translate(mk?-2:0,-149);ctx.rotate(mk?-.09:Math.sin(t*.8)*.015);
+  plate([[-15,3],[-16,-11],[-9,-23],[5,-25],[15,-16],[17,-1],[10,13],[0,18],[-11,12]]);
+  poly([[-13,-7],[-5,-10],[0,-5],[6,-11],[14,-8],[11,7],[0,12],[-10,7]],dark,1.5);
+  plate([[-5,-22],[3,-23],[7,-12],[1,-6],[-4,-11]],shade(metal,.12));
+  glow([[-11,-5],[-6,-3],[-3,-2]],red,2.4);
+  glow([[4,-2],[7,-4],[12,-6]],red,2.4);
+  plate([[-13,0],[-8,3],[-6,9],[-1,12],[-2,16],[-10,11]],shade(metal,-.08));
+  plate([[13,-1],[9,3],[7,9],[2,12],[2,16],[10,11]],shade(metal,-.22));
+  line([[-5,7],[0,5],[5,7]],mk?'#526876':red,1.6);
+  for(let x=-3;x<=3;x+=3)line([[x,8],[x,10]],'#8da0ab',1);
+  if(comic||ultimate)for(const side of[-1,1]){
+    plate([[side*14,-7],[side*20,-15],[side*20,-23],[side*25,-10],[side*20,3],[side*15,7]],shade(metal,-.12));
+  }
+  if(prime)for(const side of[-1,1])line([[side*10,-19],[side*13,-10],[side*15,-1]],light,1);
+  if(mk){line([[-9,-18],[-5,-13],[-8,-9]],dark,1.8);line([[8,-20],[10,-28],[14,-27]],'#6b7f8b',2);}
+  ctx.restore();ctx.restore();
+}
+
 // --- 보스 모델 ---
 function drawBossModel(b,s,t){
   const fam=b.fam; const [c1,c2]=VARIANT_PAL[b.name]||FAM_COL[fam]; const c2d=shade(c2,-0.3); const bob=Math.sin(t*2.2)*6; const hurt=b.hurtT>0; const flash=hurt&&Math.floor(t*30)%2===0;
@@ -146,69 +262,8 @@ function drawBossModel(b,s,t){
       drawHero(0,0,1,c1,shade(c1,-0.3),P,{extra:({headY})=>{ ctx.beginPath(); ctx.arc(0,headY,26,0,7); ctx.fillStyle=shade(c1,0.6)+'cc'; ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=5; ctx.stroke(); ctx.fillStyle='#ffffffaa'; ctx.beginPath(); ctx.ellipse(-9,headY-10,7,4,-0.6,0,7); ctx.fill(); ctx.fillStyle='#ffd23a'; ctx.fillRect(-30,headY+22,60,8); }}); break; }
     case 'inheritor': { drawHero(0,0,1.15,'#c02030','#1a1a26',P,{extra:({shY,headY})=>{ ctx.strokeStyle='#ffd23a'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-10,shY+4); ctx.lineTo(0,shY+30); ctx.lineTo(10,shY+4); ctx.stroke(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(-6,headY-2,4,6,0,0,7); ctx.ellipse(6,headY-2,4,6,0,0,7); ctx.fill(); inkPath(()=>{ctx.moveTo(-40,shY-4);ctx.lineTo(-16,shY-26);ctx.lineTo(16,shY-26);ctx.lineTo(40,shY-4);ctx.lineTo(30,shY+8);ctx.lineTo(-30,shY+8);},'#c02030',5); }}); break; }
     // ── 울트론 MK.1 : 시제기. 작고 웅크린 몸, 노출 배선, 외눈 ──
-    case 'ultron1': {
-      const cre=Math.sin(t*3)*0.05;
-      ctx.save(); ctx.rotate(cre);
-      for(const side of[-1,1]){ ctx.strokeStyle=INK; ctx.lineWidth=13; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(side*22,-20); ctx.lineTo(side*54,6); ctx.lineTo(side*44,30); ctx.stroke(); ctx.strokeStyle=shade(c1,-0.25); ctx.lineWidth=8; ctx.stroke(); }
-      inkPath(()=>{ctx.moveTo(-34,26);ctx.lineTo(-40,-84);ctx.lineTo(-16,-104);ctx.lineTo(16,-104);ctx.lineTo(40,-84);ctx.lineTo(34,26);},c1,6);
-      ctx.strokeStyle=shade(c1,-0.4); ctx.lineWidth=3; for(let i=0;i<4;i++){ ctx.beginPath(); ctx.moveTo(-30,-70+i*22); ctx.lineTo(30,-70+i*22); ctx.stroke(); }
-      for(let i=0;i<5;i++){ const a=t*1.5+i; ctx.strokeStyle=i%2?c2:'#6a3f1a'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(-8+i*4,-96); ctx.quadraticCurveTo(-24+i*10+Math.sin(a)*8,-124,-34+i*16,-108); ctx.stroke(); }
-      inkPath(()=>{ctx.moveTo(-26,-104);ctx.lineTo(-20,-142);ctx.lineTo(20,-142);ctx.lineTo(26,-104);},shade(c1,0.12),5);
-      blob(0,-124,9,9,c2,4); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-3,-127,3,0,7); ctx.fill();
-      ctx.strokeStyle=INK; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(-14,-112); ctx.lineTo(-24,-118); ctx.moveTo(14,-112); ctx.lineTo(24,-118); ctx.stroke();
-      ctx.restore(); break; }
-
-    // ── 울트론(코믹스) : 정제된 휴머노이드. 매끈한 판금, 두 눈, 어깨 포 ──
-    case 'ultron2': {
-      const P2=poseFor('idle',t*1.2,{override:{lArm:0.9,rArm:0.9,lSpread:0.7,rSpread:0.7,armsUp:0.15}}); P2.face='front';
-      for(const side of[-1,1]){ inkPath(()=>{ctx.moveTo(side*30,-96);ctx.lineTo(side*66,-104);ctx.lineTo(side*72,-74);ctx.lineTo(side*34,-66);},shade(c1,-0.12),5); blob(side*58,-86,7,7,c2,3); }
-      drawHero(0,0,1.05,c1,shade(c1,-0.28),P2,{extra:({shY,headY})=>{
-        inkPath(()=>{ctx.moveTo(-24,shY+2);ctx.lineTo(0,shY-12);ctx.lineTo(24,shY+2);ctx.lineTo(18,shY+40);ctx.lineTo(-18,shY+40);},shade(c1,0.12),4);
-        blob(0,shY+16,11,11,c2,4); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(0,shY+16,4,0,7); ctx.fill();
-        inkPath(()=>{ctx.moveTo(-19,headY+12);ctx.lineTo(-21,headY-12);ctx.lineTo(-9,headY-24);ctx.lineTo(9,headY-24);ctx.lineTo(21,headY-12);ctx.lineTo(19,headY+12);ctx.lineTo(0,headY+22);},shade(c1,0.16),5);
-        ctx.fillStyle=c2; ctx.beginPath(); ctx.ellipse(-8,headY-4,5,7,0.25,0,7); ctx.ellipse(8,headY-4,5,7,-0.25,0,7); ctx.fill();
-        ctx.strokeStyle=INK; ctx.lineWidth=3; for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(i*6,headY+8); ctx.lineTo(i*6,headY+17); ctx.stroke(); }
-        inkPath(()=>{ctx.moveTo(-11,headY-24);ctx.lineTo(-15,headY-44);ctx.lineTo(-5,headY-26);},shade(c1,0.16),4);
-        inkPath(()=>{ctx.moveTo(11,headY-24);ctx.lineTo(15,headY-44);ctx.lineTo(5,headY-26);},shade(c1,0.16),4);
-      }}); break; }
-
-    // ── 울트론 프라임 : 대형 부유체. 등 뒤 방사형 아암 6개, 맥동하는 코어 ──
-    case 'ultron3': {
-      const hov=Math.sin(t*1.6)*10; ctx.save(); ctx.translate(0,hov-24);
-      for(let i=0;i<6;i++){ const a=-Math.PI/2+(i-2.5)*0.58+Math.sin(t*1.1+i)*0.09; const ex=Math.cos(a)*152, ey=-70+Math.sin(a)*112;
-        ctx.strokeStyle=INK; ctx.lineWidth=17; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(0,-70); ctx.quadraticCurveTo(Math.cos(a)*84,-70+Math.sin(a)*54,ex,ey); ctx.stroke();
-        ctx.strokeStyle=shade(c1,0.1); ctx.lineWidth=11; ctx.stroke();
-        blob(ex,ey,10,10,c2,4); }
-      inkPath(()=>{ctx.moveTo(-52,34);ctx.lineTo(-60,-72);ctx.lineTo(-30,-116);ctx.lineTo(30,-116);ctx.lineTo(60,-72);ctx.lineTo(52,34);ctx.lineTo(0,54);},c1,7);
-      for(const side of[-1,1]){ ctx.strokeStyle=INK; ctx.lineWidth=15; ctx.beginPath(); ctx.moveTo(side*46,-84); ctx.lineTo(side*88,-40); ctx.lineTo(side*80,10); ctx.stroke(); ctx.strokeStyle=shade(c1,-0.18); ctx.lineWidth=10; ctx.stroke(); }
-      const pulse=0.6+0.4*Math.sin(t*5);
-      ctx.fillStyle=c2; ctx.globalAlpha=pulse*0.55; ctx.beginPath(); ctx.arc(0,-52,46,0,7); ctx.fill(); ctx.globalAlpha=1;
-      blob(0,-52,17,17,c2,5); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(0,-52,7*pulse+3,0,7); ctx.fill();
-      inkPath(()=>{ctx.moveTo(-27,-116);ctx.lineTo(-31,-150);ctx.lineTo(-13,-170);ctx.lineTo(13,-170);ctx.lineTo(31,-150);ctx.lineTo(27,-116);},shade(c1,0.18),6);
-      ctx.fillStyle=c2; ctx.beginPath(); ctx.ellipse(-11,-146,6,9,0.2,0,7); ctx.ellipse(11,-146,6,9,-0.2,0,7); ctx.fill();
-      ctx.strokeStyle=INK; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(-16,-128); ctx.lineTo(16,-128); ctx.stroke();
-      for(const side of[-1,1]) inkPath(()=>{ctx.moveTo(side*15,-170);ctx.lineTo(side*23,-206);ctx.lineTo(side*5,-176);},shade(c1,0.18),5);
-      ctx.restore(); break; }
-
-    // ── 얼티밋 울트론 : 최종형. 껍데기가 분해되어 궤도를 돌고, 코어가 수직 빔 ──
-    case 'ultron4': {
-      ctx.save(); ctx.translate(0,-30);
-      for(let i=0;i<14;i++){ const a=t*1.3+i*0.449; const rr=118+Math.sin(t*2+i)*26; const px=Math.cos(a)*rr, py=-64+Math.sin(a)*rr*0.42; const sz=7+((i*5)%9);
-        ctx.save(); ctx.translate(px,py); ctx.rotate(a*2); inkPath(()=>{ctx.moveTo(-sz,-sz*0.6);ctx.lineTo(sz,-sz);ctx.lineTo(sz*0.7,sz);ctx.lineTo(-sz*0.8,sz*0.7);},i%3?shade(c1,0.2):c2,3); ctx.restore(); }
-      const beam=(Math.sin(t*0.9)+1)/2;
-      if(beam>0.55){ ctx.globalAlpha=(beam-0.55)/0.45*0.5; ctx.fillStyle=c2; ctx.beginPath(); ctx.moveTo(-16,-64); ctx.lineTo(16,-64); ctx.lineTo(52,-460); ctx.lineTo(-52,-460); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1; }
-      inkPath(()=>{ctx.moveTo(-66,52);ctx.lineTo(-78,-70);ctx.lineTo(-38,-128);ctx.lineTo(38,-128);ctx.lineTo(78,-70);ctx.lineTo(66,52);ctx.lineTo(0,78);},c1,8);
-      ctx.strokeStyle=shade(c2,-0.1); ctx.lineWidth=4; for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(-58+i*4,-96+i*30); ctx.lineTo(58-i*4,-96+i*30); ctx.stroke(); }
-      for(const side of[-1,1]){ ctx.strokeStyle=INK; ctx.lineWidth=20; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(side*60,-92); ctx.lineTo(side*116,-44); ctx.lineTo(side*104,26); ctx.stroke(); ctx.strokeStyle=shade(c1,0.14); ctx.lineWidth=13; ctx.stroke(); inkPath(()=>{ctx.moveTo(side*86,26);ctx.lineTo(side*122,34);ctx.lineTo(side*112,62);ctx.lineTo(side*84,50);},c2,4); }
-      const pl=0.5+0.5*Math.sin(t*7);
-      ctx.fillStyle=c2; ctx.globalAlpha=0.35+pl*0.4; ctx.beginPath(); ctx.arc(0,-64,58,0,7); ctx.fill(); ctx.globalAlpha=1;
-      inkPath(()=>{ for(let i=0;i<12;i++){ const a=i*Math.PI/6; const rr=i%2?12:26; ctx.lineTo(Math.cos(a)*rr,-64+Math.sin(a)*rr);} },'#fff',5);
-      inkPath(()=>{ctx.moveTo(-34,-128);ctx.lineTo(-40,-168);ctx.lineTo(-16,-196);ctx.lineTo(16,-196);ctx.lineTo(40,-168);ctx.lineTo(34,-128);},shade(c1,0.22),7);
-      ctx.fillStyle=c2; ctx.beginPath(); ctx.ellipse(-14,-166,7,11,0.22,0,7); ctx.ellipse(14,-166,7,11,-0.22,0,7); ctx.fill();
-      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-14,-170,3,0,7); ctx.arc(14,-170,3,0,7); ctx.fill();
-      ctx.strokeStyle=INK; ctx.lineWidth=5; for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(i*11,-142); ctx.lineTo(i*11,-130); ctx.stroke(); }
-      for(const side of[-1,1]) inkPath(()=>{ctx.moveTo(side*26,-196);ctx.lineTo(side*40,-248);ctx.lineTo(side*8,-202);},shade(c1,0.22),6);
-      ctx.restore(); break; }
+    case 'ultron1': case 'ultron2': case 'ultron3': case 'ultron4':
+      drawUltronRevision(fam,t); break;
 
     default: drawHero(0,0,1.05,c1,c2,P);
   }
