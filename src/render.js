@@ -629,10 +629,12 @@ function drawEnv(issue,off,seg){
   const col=ISSUE_ENV_COLORS[issue]; const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,col[0]); g.addColorStop(0.45,col[1]); g.addColorStop(1,'#05070f'); ctx.fillStyle=g; ctx.fillRect(-10,-10,W+20,H+20);
   const par=(k,fn)=>{ const span=W+300; for(let i=0;i<14;i++){ const x=((i*211-off*k)%span+span)%span-150; fn(x,i); } };
   switch(issue){
-    case 7:{
-      ctx.fillStyle='#161722';par(.12,(x,i)=>{const bh=85+(i*67)%160;ctx.fillRect(x,HOR-bh,100,bh+10);});
-      ctx.strokeStyle='#665869';ctx.lineWidth=20;ctx.beginPath();ctx.ellipse(W*.72,HOR-150,85,115,-.3,0,7);ctx.stroke();ctx.strokeStyle='#bf9762';ctx.lineWidth=3;ctx.stroke();
-      ctx.fillStyle='#37303c';par(.3,(x,i)=>{const bh=30+(i*29)%70;ctx.fillRect(x,HOR-bh,70,bh+5);ctx.fillStyle='#d9a46d';ctx.fillRect(x+12,HOR-bh+9,18,3);ctx.fillStyle='#37303c';});break;
+    case 7:{ // 외계 침공: 거대 링과 기울어진 첨탑
+      const sky=ctx.createLinearGradient(0,0,0,HOR);sky.addColorStop(0,'#20152f');sky.addColorStop(1,'#705365');ctx.fillStyle=sky;ctx.fillRect(0,0,W,HOR);
+      ctx.strokeStyle='#332738';ctx.lineWidth=34;ctx.beginPath();ctx.ellipse(W*.72,HOR-145,105,155,-.3,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#bd9565';ctx.lineWidth=5;ctx.stroke();
+      par(.12,(x,i)=>{const bh=90+(i*67)%190;ctx.fillStyle='#30283d';ctx.beginPath();ctx.moveTo(x,HOR);ctx.lineTo(x+22,HOR-bh);ctx.lineTo(x+57,HOR-bh-35);ctx.lineTo(x+100,HOR);ctx.closePath();ctx.fill();ctx.strokeStyle='#826550';ctx.lineWidth=3;ctx.stroke();});
+      par(.3,(x,i)=>{const bh=30+(i*29)%90;ctx.fillStyle='#493b48';ctx.beginPath();ctx.moveTo(x,HOR+20);ctx.lineTo(x+15,HOR-bh);ctx.lineTo(x+58,HOR-bh+12);ctx.lineTo(x+85,HOR+20);ctx.closePath();ctx.fill();ctx.fillStyle='#d2a16c';ctx.fillRect(x+25,HOR-bh+20,5,Math.max(5,bh-20));});
+      break;
     }
 
     case 0: // 옥상: 물탱크·안테나
@@ -672,6 +674,8 @@ function drawEnv(issue,off,seg){
         if(i%3===0){ ctx.save(); ctx.translate(x+20,HOR-bh); ctx.rotate(-0.25); ctx.fillRect(0,-40,52,44); ctx.restore(); } });
       ctx.fillStyle='#141c2c'; par(0.2,(x,i)=>{ if(i%2)return; const bh=60+((i*53)%110); ctx.fillRect(x,HOR-bh,96,bh+8);
         ctx.fillStyle='#ff6a3033'; for(let y=0;y<Math.floor(bh/26);y++)if((i+y)%3===0)ctx.fillRect(x+12,HOR-bh+10+y*26,70,8); ctx.fillStyle='#141c2c'; });
+      // 부서진 고가 철골과 산업용 굴뚝
+      par(.24,(x,i)=>{if(i%3)return;ctx.fillStyle='#26343d';ctx.fillRect(x,HOR-175,15,195);ctx.fillRect(x+90,HOR-120,12,140);ctx.save();ctx.translate(x,HOR-153);ctx.rotate(.24);ctx.fillRect(0,0,125,12);ctx.restore();ctx.fillStyle='#a66745';ctx.fillRect(x+2,HOR-174,11,5);});
       // 탐조등
       ctx.save(); ctx.globalAlpha=0.13; for(let i=0;i<3;i++){ const a=Math.sin(off/900+i*2)*0.5; const bx=W*(0.2+i*0.3); ctx.fillStyle='#8ea6c4'; ctx.beginPath(); ctx.moveTo(bx,HOR); ctx.lineTo(bx+Math.sin(a)*300-120,-40); ctx.lineTo(bx+Math.sin(a)*300+120,-40); ctx.closePath(); ctx.fill(); } ctx.restore();
       // 센트리 편대 실루엣
@@ -725,6 +729,30 @@ function drawGroundRange(type,z0,z1,col){
     }
     // 가로지르는 케이블
     for(let zz=Math.ceil(z0/9)*9;zz<z1;zz+=9){ const p1=proj(-1.9,3.6,zz),p2=proj(1.9,3.6,zz); ctx.strokeStyle='#000'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.quadraticCurveTo((p1.x+p2.x)/2,p1.y+40*p1.s,p2.x,p2.y); ctx.stroke(); }
+    return;
+  }
+  if((type==='run'||type==='boss')&&(R.issue===6||R.issue===7)){
+    const alien=R.issue===7,travel=(R.dist/2.2)%6;
+    const poly=(pts,fill,stroke)=>{ctx.beginPath();pts.forEach(([x,y,z],i)=>{const p=proj(x,y,z);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke();}};
+    q(-1.7,1.7,z0,z1,alien?'#332538':'#26363d');
+    for(let z=-travel;z<z1;z+=6){const lo=Math.max(z0,z),hi=Math.min(z1,z+5.75);if(hi<=lo)continue;
+      if(alien){
+        for(const lane of [-1,0,1])poly([[lane-.47,0,lo],[lane+.47,0,lo],[lane+.44,0,hi],[lane,0,hi],[lane-.44,0,hi]],lane===0?'#514053':'#443348','#735a62');
+        for(const side of [-1,1]){q(side<0?-1.68:1.48,side<0?-1.48:1.68,lo,hi,'#ac8556');}
+      }else{
+        for(const lane of [-1,0,1])q(lane-.47,lane+.47,lo,hi,((Math.floor((z+travel)/6)+lane)%2)?'#31434a':'#293a43');
+        for(const side of [-1,1])q(side<0?-1.68:1.52,side<0?-1.52:1.68,lo,Math.min(hi,lo+.7),'#b29352');
+        if(hi-lo>2){poly([[-1.4,0,lo+.5],[-.95,0,lo+1],[-1.15,0,lo+1.4],[-.7,0,lo+2],[-1.22,0,lo+1.48],[-1.04,0,lo+1.05]],'#19272f');}
+      }
+    }
+    for(const x of [-.5,.5]){const a=proj(x,0,z0),b=proj(x,0,z1);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=alien?'#c2a17766':'#a4bdc566';ctx.lineWidth=2;ctx.stroke();}
+    for(const side of [-1,1]){
+      poly([[side*1.7,0,z0],[side*1.7,0,z1],[side*1.8,.22,z1],[side*1.8,.22,z0]],alien?'#806448':'#49616a');
+      for(let z=6-travel;z<z1;z+=6){if(z<z0)continue;
+        if(alien)poly([[side*1.9,0,z],[side*2.05,.9,z],[side*1.88,1.3,z],[side*1.76,.15,z]],'#604553','#be9766');
+        else poly([[side*1.85,0,z],[side*1.85,.48,z],[side*1.91,.48,z],[side*1.91,0,z]],'#68818a');
+      }
+    }
     return;
   }
   const base=type==='wall'?'#26305a':type==='fall'?'#0a0d1d':'#1c2447';

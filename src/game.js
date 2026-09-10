@@ -768,7 +768,7 @@ function codeTable(kind){return `<div class="tbl"><table>${Object.entries(CODES)
 function bindCodes(kind){$('#codeForm').onsubmit=e=>{e.preventDefault();redeem($('#codeIn').value,kind);};$('#dlg').querySelectorAll('.codebtn').forEach(b=>b.onclick=()=>{redeem(b.dataset.code,kind);});}
 $('#bCode').onclick=()=>{const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>쿠폰</h3>${codeFields()}<details class="fold"><summary>쿠폰 목록</summary>${codeTable('coupon')}</details><button class="btn sm ghost" id="dClose">닫기</button></div>`;d.showModal();bindCodes('coupon');$('#dClose').onclick=()=>d.close();};
 $('#bSettings').onclick=()=>{
- const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.13</h3>
+ const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.14</h3>
  <div class="sub-h">사운드</div><div class="actions"><label><input type="checkbox" id="setBgm" ${MUSIC.on?'checked':''}> BGM</label><label><input type="checkbox" id="setSfx" ${SFX.on?'checked':''}> 효과음</label><label><input type="checkbox" id="setVoice" ${VOICE.on?'checked':''}> 보스 보이스</label></div>
  <label>배경음악 <select id="musicMode" style="width:100%;padding:10px;margin:8px 0">${[['auto','챕터에 맞춰 자동 변경',true],['main','기본 BGM 고정',true],['ultron','에이지 오브 울트론 고정',issueUnlocked(6)],['infinity','인피니티 워 고정',issueUnlocked(7)]].map(([k,n,ok])=>`<option value="${k}" ${MUSIC.mode===k?'selected':''} ${ok?'':'disabled'}>${n}${ok?'':' — 챕터 해금 필요'}</option>`).join('')}</select></label>
   <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="checkbox" id="ttsChk" ${VOICE.tts?'checked':''}> 보스 음성 대사(브라우저 TTS) 사용 — 기기에 <b>남성 한국어 음성</b>이 있을 때만 재생됩니다 (현재: ${VOICE.maleVoice()?'감지됨: '+VOICE.maleVoice().name:'남성 음성 없음 → 말풍선만 표시'})</label>
