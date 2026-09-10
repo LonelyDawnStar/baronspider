@@ -5,7 +5,7 @@ const SFX={ac:null,on:true,master:null,verb:null,
       // 간이 리버브 (감쇠 노이즈 임펄스)
       const len=ac.sampleRate*1.4, ir=ac.createBuffer(2,len,ac.sampleRate); for(let ch=0;ch<2;ch++){ const d=ir.getChannelData(ch); for(let i=0;i<len;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.8); } }
       const cv=ac.createConvolver(); cv.buffer=ir; const vg=ac.createGain(); vg.gain.value=0.35; cv.connect(vg); vg.connect(this.master); this.verb=cv; }catch(e){} },
-  resume(){ this.init(); if(this.ac&&this.ac.state==='suspended')this.ac.resume(); },
+  resume(){ if(document.hidden)return; this.init(); if(this.ac&&this.ac.state==='suspended')this.ac.resume(); },
   // 기본 톤: 필터·디튠 스택·리버브 전송
   tone(f,d,{type='sine',g=0.4,slide=0,att=0.008,delay=0,lp=8000,q=0.7,detune=0,voices=1,verb=0,rel=null}={}){ if(!this.on||!this.ac)return; const ac=this.ac,t=ac.currentTime+delay; const v=ac.createGain(); const flt=ac.createBiquadFilter(); flt.type='lowpass'; flt.frequency.setValueAtTime(lp,t); flt.Q.value=q; flt.frequency.exponentialRampToValueAtTime(Math.max(120,lp*0.35),t+d); v.gain.setValueAtTime(0.0001,t); v.gain.linearRampToValueAtTime(g/Math.sqrt(voices),t+att); v.gain.exponentialRampToValueAtTime(0.0001,t+(rel||d)); flt.connect(v); v.connect(this.master); if(verb&&this.verb){ const s=ac.createGain(); s.gain.value=verb; v.connect(s); s.connect(this.verb); }
     for(let i=0;i<voices;i++){ const o=ac.createOscillator(); o.type=type; o.frequency.setValueAtTime(f,t); if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t+d); o.detune.value=(i-(voices-1)/2)*detune; o.connect(flt); o.start(t); o.stop(t+d+0.1); } },
@@ -285,3 +285,23 @@ document.addEventListener('keydown',()=>{ if(MUSIC.on&&!MUSIC.started)MUSIC.play
 // 보이스 재생 시 자동 더킹
 const _vpackPlay=VPACK.play.bind(VPACK);
 VPACK.play=async function(fam,ev){ const d=await _vpackPlay(fam,ev); if(d)MUSIC.duck(d+0.4); return d; };
+
+// ===== 백그라운드 전환 시 소리 정지 =====
+// 탭을 가리거나 폰 화면을 끄면 requestAnimationFrame은 멈추지만 Web Audio는 계속 돈다.
+// 루프 중인 BGM이 그대로 흘러나오므로 컨텍스트째 suspend 한다. (돌아오면 이어서 재생)
+const AUDIOHOLD={held:false};
+function audioHold(){
+  if(AUDIOHOLD.held)return; AUDIOHOLD.held=true;
+  // 자리를 비운 사이에 죽지 않도록 진행 중인 러닝은 일시정지
+  try{ if(typeof R!=='undefined'&&R&&!R.over&&!R.dead&&!R.paused&&typeof togglePause==='function')togglePause(); }catch(e){}
+  try{ if(window.speechSynthesis)speechSynthesis.cancel(); }catch(e){}
+  try{ if(SFX.ac&&SFX.ac.state==='running')SFX.ac.suspend(); }catch(e){}
+}
+function audioRelease(){
+  if(!AUDIOHOLD.held)return; AUDIOHOLD.held=false;
+  try{ if(SFX.on&&SFX.ac&&SFX.ac.state==='suspended')SFX.ac.resume(); }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{ document.hidden?audioHold():audioRelease(); });
+window.addEventListener('pagehide',audioHold);
+window.addEventListener('freeze',audioHold);
+window.addEventListener('resume',audioRelease);
