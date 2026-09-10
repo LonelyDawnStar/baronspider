@@ -245,10 +245,18 @@ function drawUltronRevision(fam,t){
   ctx.restore();ctx.restore();
 }
 
+// Patch 0.3: conservative animated silhouette bounds in model coordinates.
+const BOSS_TOP={goblin:185,vulture:215,electro:210,sand:180,ock:180,mysterio:165,inheritor:180,ultron1:195,ultron2:195,ultron3:205,ultron4:215,other:165};
+function bossModelScale(b,projectionScale){return projectionScale*3.1*(b.fam==='mysterio'?1.7:1);}
+function bossHudAnchor(b){
+  const p=proj(b.x,0.5,14);
+  // Reserve 42px for the bottom-most beat label, then a 12px body gap.
+  return {x:p.x,y:p.y-(BOSS_TOP[b.fam]||BOSS_TOP.other)*bossModelScale(b,p.s)-54};
+}
 // --- 보스 모델 ---
 function drawBossModel(b,s,t){
   const fam=b.fam; const [c1,c2]=VARIANT_PAL[b.name]||FAM_COL[fam]; const c2d=shade(c2,-0.3); const bob=Math.sin(t*2.2)*6; const hurt=b.hurtT>0; const flash=hurt&&Math.floor(t*30)%2===0;
-  ctx.save(); ctx.scale(s,s); ctx.translate(0,bob); if(flash){ctx.globalAlpha*=0.7;}
+  ctx.save(); ctx.scale(s,s); ctx.translate(0,bob); const shieldPulse=Math.max(0,1-(t-(b.shieldHitAt??-99))/0.22); if(shieldPulse)ctx.translate(0,-3*Math.sin(shieldPulse*Math.PI)); if(flash){ctx.globalAlpha*=0.7;}
   const P=poseFor('idle',t*1.3,{override:{lArm:0.6,rArm:0.6,armsUp:0.3,lSpread:0.4,rSpread:0.4}}); P.face='front';
   switch(fam){
     case 'goblin': { // 글라이더
@@ -271,6 +279,13 @@ function drawBossModel(b,s,t){
       drawUltronRevision(fam,t); break;
 
     default: drawHero(0,0,1.05,c1,c2,P);
+  }
+  // Local impact glint: a single path, no full-screen flash or blur.
+  if(shieldPulse>0){
+    ctx.save();ctx.globalAlpha=shieldPulse;ctx.translate(0,-105);
+    ctx.strokeStyle='#e5ffff';ctx.lineWidth=2;ctx.beginPath();
+    for(let i=0;i<6;i++){const a=i*Math.PI/3;const r=9+(1-shieldPulse)*19;ctx.moveTo(Math.cos(a)*5,Math.sin(a)*5);ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
+    ctx.stroke();ctx.restore();
   }
   ctx.restore();
 }

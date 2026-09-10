@@ -612,9 +612,9 @@ function draw(){
     if(b>0&&b<ZF){ drawGroundRange(nxt,b,ZF,col); drawGroundRange(cur,0,b,col); drawBoundary(cur,nxt,b); } else drawGroundRange(cur,0,ZF,col); }
   // 보스 (+ 미스테리오 분신)
   if(R.boss){ const b=R.boss; const draws=[[b.x,1]]; if(b.fam==='mysterio'&&b.decoyT>0){draws.push([b.x-1.3,0.45],[b.x+1.3,0.45]);}
-    for(const [bx,al] of draws){ const p=proj(bx,0.5,14); ctx.save(); ctx.globalAlpha=al; ctx.translate(p.x,p.y); if(b.phase==='finish'){ const k=Math.min(1,b.finT/1.1); const e=k*k; ctx.translate(0,-e*H*0.9); ctx.rotate(e*Math.PI*4); ctx.scale(1-e*0.8,1-e*0.8); if(b.finT<0.1){ctx.globalAlpha*=0.75;} } ctx.fillStyle='#00000066'; ctx.beginPath(); ctx.ellipse(0,6,70*p.s*2,10*p.s*2,0,0,7); ctx.fill(); drawBossModel(b,p.s*3.1*(b.fam==='mysterio'?1.7:1),R.t); ctx.restore(); }
+    for(const [bx,al] of draws){ const p=proj(bx,0.5,14); ctx.save(); ctx.globalAlpha=al; ctx.translate(p.x,p.y); if(b.phase==='finish'){ const k=Math.min(1,b.finT/1.1); const e=k*k; ctx.translate(0,-e*H*0.9); ctx.rotate(e*Math.PI*4); ctx.scale(1-e*0.8,1-e*0.8); if(b.finT<0.1){ctx.globalAlpha*=0.75;} } ctx.fillStyle='#00000066'; ctx.beginPath(); ctx.ellipse(0,6,70*p.s*2,10*p.s*2,0,0,7); ctx.fill(); drawBossModel(b,bossModelScale(b,p.s),R.t); ctx.restore(); }
     if(b.phase!=='finish'){ // 컴팩트 게이지: 보스 머리 위
-      const p=proj(b.x,3.35*(b.fam==='mysterio'?1.6:1),14); const w=150, hh=6; ctx.save(); ctx.translate(p.x,p.y); const disp=canvasFont('--disp');
+      const p=bossHudAnchor(b); const w=150, hh=6; ctx.save(); ctx.translate(p.x,p.y); const disp=canvasFont('--disp');
       ctx.font=`900 15px ${disp}`; ctx.textAlign='center'; ctx.textBaseline='alphabetic'; ctx.lineWidth=4; ctx.strokeStyle=INK; ctx.fillStyle='#fff'; ctx.strokeText(b.name,0,-10); ctx.fillText(b.name,0,-10);
       const bar=(y,frac,col)=>{ ctx.fillStyle=INK; ctx.fillRect(-w/2-2,y-2,w+4,hh+4); ctx.fillStyle='#2b2f45'; ctx.fillRect(-w/2,y,w,hh); ctx.fillStyle=col; ctx.fillRect(-w/2,y,w*clamp(frac,0,1),hh); };
       bar(0,b.hp/b.max,'#e6202a');
@@ -622,7 +622,7 @@ function draw(){
       else if(b.phase==='intro'){ ctx.fillStyle='#fff'; ctx.font=`700 11px ${canvasFont('--mono')}`; ctx.strokeText('등장 중 — 무적',0,hh+18); ctx.fillText('등장 중 — 무적',0,hh+18); }
       else { bar(hh+5,b.t/b.tmax,'#21c6de'); }
       ctx.restore(); }
-    if(R.bubble&&R.bubble.t>0){ R.bubble.t-=dtLast; const bb=R.bubble; const p=proj(b.x+1.0,4.4*(b.fam==='mysterio'?1.5:1),14); const k=Math.min(1,(2.4-bb.t)/0.15); ctx.save(); ctx.translate(p.x,p.y); ctx.scale(k,k); ctx.font=`700 15px ${canvasFont('--body')}`; const tw=Math.min(300,ctx.measureText(bb.txt).width+26); const lines=[]; { let s=bb.txt,cur=''; for(const ch of s){ if(ctx.measureText(cur+ch).width>tw-24){lines.push(cur);cur=ch;} else cur+=ch; } lines.push(cur); } const th=lines.length*20+14; const spiky=bb.kind==='out'||bb.kind==='beat';
+    if(R.bubble&&R.bubble.t>0){ R.bubble.t-=dtLast; const bb=R.bubble; const hp=bossHudAnchor(b); const p={x:hp.x+160,y:hp.y-24}; const k=Math.min(1,(2.4-bb.t)/0.15); ctx.save(); ctx.translate(p.x,p.y); ctx.scale(k,k); ctx.font=`700 15px ${canvasFont('--body')}`; const tw=Math.min(300,ctx.measureText(bb.txt).width+26); const lines=[]; { let s=bb.txt,cur=''; for(const ch of s){ if(ctx.measureText(cur+ch).width>tw-24){lines.push(cur);cur=ch;} else cur+=ch; } lines.push(cur); } const th=lines.length*20+14; const spiky=bb.kind==='out'||bb.kind==='beat';
       ctx.fillStyle='#fff'; ctx.strokeStyle=INK; ctx.lineWidth=3; ctx.beginPath(); if(spiky){ const n=18; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; const r=(i%2?1.0:1.18); ctx.lineTo(Math.cos(a)*(tw/2+10)*r,-th/2-8+Math.sin(a)*(th/2+10)*r); } ctx.closePath(); } else { ctx.roundRect(-tw/2,-th-8,tw,th,10); ctx.moveTo(-tw/2+18,-8); ctx.lineTo(-tw/2+6,14); ctx.lineTo(-tw/2+38,-8); } ctx.fill(); ctx.stroke();
       ctx.fillStyle=INK; ctx.textAlign='center'; ctx.textBaseline='middle'; lines.forEach((ln,i)=>ctx.fillText(ln,0,-th-8+th/2+(i-(lines.length-1)/2)*20)); ctx.restore(); }
     if(b.phase==='finish'&&b.finT<0.12){ ctx.fillStyle=`rgba(255,255,255,${1-b.finT/0.12})`; ctx.fillRect(-W*0.2,-H*0.2,W*1.4,H*1.4); }
@@ -695,12 +695,15 @@ let dtLast=0.016;
 let pvValid=false; const pv=document.createElement('canvas'); pv.width=W; pv.height=H; const pvx=pv.getContext('2d'); fitCanvas();
 // Patch 0.2: SHIELD damage feedback without pausing simulation or allocating voice noise.
 function ultronShieldImpact(b){
-  const p=proj(b.x,1.2,14);
-  R.parts.push({x:p.x,y:p.y-60,t:0.25,c:'#2fd3e6',big:true});
-  // One short tone, rate-limited only for feedback; every collision still deals damage.
+  b.shieldHitAt=R.t;
+  // Feedback budget: one short burst per 120ms even when several bombs arrive.
   if(R.t>=(b.nextShieldSfxT||0)){
     b.nextShieldSfxT=R.t+0.12;
-    SFX.tone(180,0.09,{type:'triangle',g:0.24,slide:0.5,lp:1200});
+    const p=proj(b.x,0.5,14), y=p.y-105*bossModelScale(b,p.s);
+    R.parts.push({x:p.x,y,t:0.25,c:'#2fd3e6',big:true});
+    for(let i=0;i<6;i++)R.parts.push({burst:true,x:p.x,y,a:i*Math.PI/3+0.2,len:26+(i%2)*14,t:0.22,c:i%2?'#ffd780':'#bffaff'});
+    SFX.tone(145,0.12,{type:'triangle',g:0.27,slide:0.4,lp:1300});
+    SFX.tone(950,0.055,{type:'sine',g:0.1,slide:0.6,lp:2400});
   }
   if(b.hp<=0)VOICE.boss(b.fam,'beat');
 }
