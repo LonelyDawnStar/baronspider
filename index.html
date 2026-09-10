@@ -1732,7 +1732,7 @@ function update(dt){
       if(o.type==='vial'){ const near=same||(R.mods.magnet&&Math.abs(R.px-(o.lane-1))<1.3)||R.uniT>0; if(near&&(R.seg!=='swing'||Math.abs((o.y||0)-R.py)<1.2)){o.hit=true;R.vials++;R.score+=10;SFX.play('vial',R.vials); if(R.vials%5===0){addCombo(1);R.msg='VIAL STREAK';R.msgT=0.4;} } }
       else if(o.type==='iso'){ if(same){o.hit=true;R.iso++;toast('ISO-8!');SFX.play('iso');} }
       else if(o.type==='fakebomb'){ if(same){o.hit=true;R.combo=0;R.msg='FAKE!';R.msgT=0.7;SFX.play('fail');R.parts.push({x:W/2,y:H*0.4,t:0.5,c:'#3fbf7a',big:true});} }
-      else if(o.type==='bomb'){ if(same&&R.boss&&R.boss.phase==='fight'){o.hit=true;R.boss.hp-=R.mods.bombDmg;R.boss.hurtT=0.35;R.score+=300;SFX.play('bomb');VOICE.boss(R.boss.fam,R.boss.hp<=0?'beat':'hurt');{ const bp=proj(R.boss.x,1.2,14); impact(0.6,bp.x,bp.y,'#2fd3e6'); R.parts.push({x:bp.x,y:bp.y,t:0.5,c:'#2fd3e6',big:true}); }addCombo(1);if(R.boss.hp<=0){R.boss.phase='beat';R.boss.tapT=R.boss.tapMax;R.boss.taps=0;R.beat={t:0,cur:0,x:R.px};R.zip=null;R.hazards=[];R.objs=R.objs.filter(o=>o.type==='vial');SFX.play('web');setHint(`연타! (탭 / 스페이스 / ↑) ×${R.boss.needTaps} — 파란 게이지를 비워라`,4);toast('FINISH HIM!');}} }
+      else if(o.type==='bomb'){ if(same&&R.boss&&R.boss.phase==='fight'){o.hit=true;R.boss.hp-=R.mods.bombDmg;R.boss.hurtT=0.35;R.score+=300;if(isUltronBoss(R.boss)){ultronShieldImpact(R.boss);}else{SFX.play('bomb');VOICE.boss(R.boss.fam,R.boss.hp<=0?'beat':'hurt');const bp=proj(R.boss.x,1.2,14);impact(0.6,bp.x,bp.y,'#2fd3e6');R.parts.push({x:bp.x,y:bp.y,t:0.5,c:'#2fd3e6',big:true});}addCombo(1);if(R.boss.hp<=0){R.boss.phase='beat';R.boss.tapT=R.boss.tapMax;R.boss.taps=0;R.beat={t:0,cur:0,x:R.px};R.zip=null;R.hazards=[];R.objs=R.objs.filter(o=>o.type==='vial');SFX.play('web');setHint(`연타! (탭 / 스페이스 / ↑) ×${R.boss.needTaps} — 파란 게이지를 비워라`,4);toast('FINISH HIM!');}} }
       else if(o.type==='ring'){ if(same&&(R.seg!=='swing'||Math.abs((o.y||1)-R.py)<1)){o.hit=true;SFX.play('ring');addCombo(1);R.score+=50;} }
       else if(o.type==='sign'){ if(same&&R.py>=o.band[0]&&R.py<=o.band[1]){o.hit=true;hitPlayer();} }
       else if(o.type==='proj'){ if(same&&R.state!=='slide'&&R.state!=='jump'){o.hit=true;hitPlayer();} else if(same){o.hit=true;addCombo(1);} }
@@ -1768,7 +1768,7 @@ function update(dt){
 // 그리기
 function draw(){
   const col=ISSUE_ENV_COLORS[R.issue]; const sx=R.shake?rnd(-8,8)*R.shake:0, sy=R.shake?rnd(-8,8)*R.shake:0;
-  ctx.save(); ctx.translate(sx,sy); R.zoomPunch=Math.max(0,(R.zoomPunch||0)-dtLast*0.5); R.zoom=lerp(R.zoom||1,(R.boss&&R.boss.phase==='beat')?1.6:1,0.1)+(R.zoomPunch||0); if(R.shake>0&&R.shakeRot){ ctx.translate(W/2,H/2); ctx.rotate(R.shakeRot*R.shake*Math.sin(R.t*60)); ctx.translate(-W/2,-H/2); } if(R.zoom>1.001){ const bp=proj(R.boss?R.boss.x:0,0.9,14); const cx=lerp(W/2,bp.x,0.6), cy=lerp(H*0.62,bp.y,0.7); ctx.translate(cx,cy); ctx.scale(R.zoom,R.zoom); ctx.translate(-cx,-cy); }
+  ctx.save(); ctx.translate(sx,sy); R.zoomPunch=Math.max(0,(R.zoomPunch||0)-dtLast*0.5); R.zoom=lerp(R.zoom||1,((R.boss&&R.boss.phase==='beat')?1.6:1)+(R.zoomPunch||0),Math.min(1,dtLast*6)); if(R.shake>0&&R.shakeRot){ ctx.translate(W/2,H/2); ctx.rotate(R.shakeRot*R.shake*Math.sin(R.t*60)); ctx.translate(-W/2,-H/2); } if(R.zoom>1.001){ const bp=proj(R.boss?R.boss.x:0,0.9,14); const cx=lerp(W/2,bp.x,0.6), cy=lerp(H*0.62,bp.y,0.7); ctx.translate(cx,cy); ctx.scale(R.zoom,R.zoom); ctx.translate(-cx,-cy); }
   { const v=VIEWS[R.seg]||VIEWS.run; const k=Math.min(1,dtLast*3.2); HOR=lerp(HOR,H*v.hor,k); G=lerp(G,H*v.g,k); ROLL=lerp(ROLL,FREE()?-R.px*0.07:0,k); }
   if(ROLL){ ctx.translate(W/2,H*0.7); ctx.rotate(ROLL); ctx.translate(-W/2,-H*0.7); }
   drawEnv(R.issue,R.bgOff,R.seg);
@@ -1866,6 +1866,17 @@ function drawFigure(x,y,s,c1,c2,ph,kind,state){
 }
 let dtLast=0.016;
 let pvValid=false; const pv=document.createElement('canvas'); pv.width=W; pv.height=H; const pvx=pv.getContext('2d'); fitCanvas();
+// Patch 0.2: SHIELD damage feedback without pausing simulation or allocating voice noise.
+function ultronShieldImpact(b){
+  const p=proj(b.x,1.2,14);
+  R.parts.push({x:p.x,y:p.y-60,t:0.25,c:'#2fd3e6',big:true});
+  // One short tone, rate-limited only for feedback; every collision still deals damage.
+  if(R.t>=(b.nextShieldSfxT||0)){
+    b.nextShieldSfxT=R.t+0.12;
+    SFX.tone(180,0.09,{type:'triangle',g:0.24,slide:0.5,lp:1200});
+  }
+  if(b.hp<=0)VOICE.boss(b.fam,'beat');
+}
 function impact(str,x,y,col='#fff'){ // 타격감 패키지: 히트스톱 + 화면 흔들림 + 줌 펀치 + 임팩트 라인
   R.hitstop=Math.max(R.hitstop||0,Math.min(0.045,str*0.025)); R.shake=Math.max(R.shake,0.15+str*0.5); R.zoomPunch=Math.max(R.zoomPunch||0,0.02+str*0.06); R.shakeRot=(Math.random()-0.5)*str*0.06;
   if(x!=null){ const n=6+Math.round(str*10); for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2; R.parts.push({burst:true,x,y,a,len:40+Math.random()*90*(0.5+str),t:0.22,c:col}); } }
