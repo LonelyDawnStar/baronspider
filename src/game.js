@@ -12,7 +12,7 @@ const ENERGY_MAX=5, ENERGY_MS=3*60*1000;
 let S=null;
 function fresh(){
   return {vials:1500,iso:60,energy:5,energyAt:now(),owned:{classic:{lv:1,xp:0,dup:0,rk:0},mangaverse:{lv:1,xp:0,dup:0,rk:0}},team:['classic','mangaverse',null],
-    issue:0,mission:0,done:[0,0,0,0,0,0],mdone:{},unl:{date:'',best:0,claimed:[]},event:{key:-1,best:0,claimed:[]},ops:[null,null,null],daily:{date:'',runs:0,dist:0,vials:0,enemies:0,bosses:0,claimed:[]},continues:0,stats:{runs:0,best:0,bossKills:0}};
+    issue:0,mission:0,done:[0,0,0,0,0,0,0],mdone:{},unl:{date:'',best:0,claimed:[]},event:{key:-1,best:0,claimed:[]},ops:[null,null,null],daily:{date:'',runs:0,dist:0,vials:0,enemies:0,bosses:0,claimed:[]},continues:0,stats:{runs:0,best:0,bossKills:0}};
 }
 function load(){try{const j=localStorage.getItem(SAVE_KEY);if(j){S=Object.assign(fresh(),JSON.parse(j));}}catch(e){} if(!S)S=fresh(); normTeam(); tickEnergy();}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
@@ -343,7 +343,7 @@ function startRun(mode){
   normTeam(); if(!leadId()){toast('팀에 스파이더를 배치해야 출격할 수 있습니다'); $('#nav [data-p="collection"]').click(); const tb=document.querySelector('.teambox'); if(tb){tb.scrollIntoView({behavior:'smooth',block:'center'}); FX.retrig(tb,'on');} return;}
   tickEnergy(); if(S.energy<1){toast('에너지 부족');return;}
   S.energy--; if(S.energy===ENERGY_MAX-1)S.energyAt=now(); dailyCheck(); S.daily.runs++; S.stats.runs++; save();
-  const issue=mode==='story'?S.issue:Math.floor(Math.random()*6);
+  const issue=mode==='story'?S.issue:Math.floor(Math.random()*ISSUES.length);
   const ms=mode==='story'?genMission(S.issue,Math.min(S.mission,missionCount(S.issue)-1)):null;
   const lead=CH[leadId()]; const mods=leaderMods();
   R={mode,issue,ms,lead,mods,shields:mods.shields,revives:mods.revives,regenT:mods.shieldRegen||0,uniGauge:0,uniT:0,clones:[{alive:true,t:0},{alive:true,t:0}],tentCD:0,tentFx:null,t:0,dist:0,score:0,vials:0,iso:0,enemies:0,combo:0,maxCombo:0,comboT:0,bosses:0,bossSeen:0,
@@ -377,8 +377,9 @@ function startBoss(){
   let name; if(R.mode==='story')name=ISSUES[R.issue].bosses[R.ms.bossIdx??0]; else name=list[Math.floor(Math.random()*list.length)];
   if(Math.random()<0.2&&R.mode==='unl')name=eventInfo().boss;
   R.bossSeen++;
-  const hp=R.mode==='story'?8+R.issue*2+(R.ms.bossIdx||0)*2:8+R.issue+R.bossSeen;
-  MUSIC.play('boss',{fade:0.8}); const fam=FAM(name); R.boss={name,fam,hp,max:hp,tmax:60+hp*1.6+R.mods.escTime,t:60+hp*1.6+R.mods.escTime,x:0,tx:0,phase:'intro',introT:2.4,taps:0,needTaps:10+R.issue*2,tapMax:5+(10+R.issue*2)*0.28,tapT:0,shot:0,bob:0,atk:2.8,hurtT:0,decoyT:0,lastTap:-9};
+  const bIdx=R.mode==='story'?(R.ms.bossIdx||0):0;
+  const hp=R.mode==='story'?(R.issue===6?20+bIdx*5:8+R.issue*2+bIdx*2):8+R.issue+R.bossSeen;
+  MUSIC.play('boss',{fade:0.8}); const fam=FAM(name); R.boss={name,fam,hp,max:hp,lvl:R.issue===6?bIdx:0,telK:R.issue===6?1-bIdx*0.07:1,tmax:60+hp*1.6+R.mods.escTime,t:60+hp*1.6+R.mods.escTime,x:0,tx:0,phase:'intro',introT:2.4,taps:0,needTaps:10+R.issue*2+(R.issue===6?bIdx*3:0),tapMax:5+(10+R.issue*2+(R.issue===6?bIdx*3:0))*0.28,tapT:0,shot:0,bob:0,atk:2.8,hurtT:0,decoyT:0,lastTap:-9};
   $('#hBossName').textContent=name; $('#hBoss').classList.add('on'); FX.cutin(name); setTimeout(()=>{ if(R&&R.boss){ const b=R.boss; VOICE.boss(b.fam,'in').then(dur=>{ if(R&&R.boss===b&&dur>0)b.introT=Math.max(b.introT,0.35+dur+0.3); }); } },350); setHint('보스 등장…',2); R.hazards=[]; R.objs=R.objs.filter(o=>o.type==='vial'||o.type==='iso');
   R.objs=R.objs.filter(o=>o.type==='vial');
 }
@@ -396,7 +397,7 @@ function spawn(){
   const clearLen=R.speed*CLEAR_SEC; const inClear=(z<(R.clearUntil||0))||(z>=R.segEndZ&&z<R.segEndZ+clearLen*1.2+4)||(R.boss&&R.boss.phase==='intro'); // 구간 진입 후 3초는 장애물 없음
   if(inClear){ const lanes=[0,1,2].sort(()=>Math.random()-0.5); const y=seg==='swing'?rnd(0.6,2.4):0; for(let i=0;i<4;i++)R.objs.push({type:'vial',lane:lanes[0],y,z:z+i*1.4,hit:false}); return; }
   const lanes=[0,1,2].sort(()=>Math.random()-0.5);
-  const push=o=>R.objs.push(Object.assign({z,hit:false,passed:false},o));
+  const push=o=>R.objs.push(Object.assign({z,hit:false,passed:false},o,(R.issue===6&&o.type==='enemy')?{bot:true}:null));
   if(seg==='run'||seg==='boss'){
     const r=Math.random(); const l=lanes[0];
     if(seg==='boss'&&R.boss&&R.boss.phase==='intro'){ /* 등장 중: 장애물 없음 */ }
@@ -535,7 +536,7 @@ function update(dt){
   // 보스
   if(R.boss){ const b=R.boss; b.bob+=dt; b.hurtT=Math.max(0,b.hurtT-dt); b.decoyT=Math.max(0,b.decoyT-dt); b.x+=(b.tx-b.x)*dt*2.2;
     if(b.phase==='intro'){ R.inv=Math.max(R.inv,0.5); b.introT-=dt; if(b.introT<=0){ b.phase='fight'; b.atk=1.2; setHint(FAM_INFO[b.fam],4); SFX.play('whoosh'); } }
-    else if(b.phase==='fight'){ b.t-=dt; $('#hBossT').style.width=(b.t/b.tmax*100)+'%'; $('#hBossLbl2').textContent='도주 타이머'; $('#hBossT3').style.width='0%'; b.atk-=dt; if(b.atk<=0){ bossPattern(b); if(b.rng()<0.6)VOICE.boss(b.fam,'attack'); b.tx=(Math.floor(b.rng()*3)-1)*0.7; b.atk=2.4+b.rng()*1.4-Math.min(1.2,R.issue*0.18); }
+    else if(b.phase==='fight'){ b.t-=dt; $('#hBossT').style.width=(b.t/b.tmax*100)+'%'; $('#hBossLbl2').textContent='도주 타이머'; $('#hBossT3').style.width='0%'; b.atk-=dt; if(b.atk<=0){ bossPattern(b); if(b.rng()<0.6)VOICE.boss(b.fam,'attack'); b.tx=(Math.floor(b.rng()*3)-1)*0.7; b.atk=Math.max(1.0,2.4+b.rng()*1.4-Math.min(1.2,R.issue*0.18)-(b.lvl||0)*0.18); }
       if(b.fam==='other'||b.fam==='inheritor'){ b.shot+=dt; if(b.shot>3.2){b.shot=0;R.objs.push({type:'proj',lane:R.lane,z:12,hit:false,fast:true});} }
       if(b.t<=0)endBoss(false); }
     else if(b.phase==='beat'){ R.inv=Math.max(R.inv,0.6); $('#hBossT').style.width=(Math.max(0,1-b.taps/b.needTaps)*100)+'%'; $('#hBossLbl2').textContent=`연타 게이지 ${b.taps}/${b.needTaps}`; $('#hBossT3').style.width=(Math.max(0,b.tapT/b.tapMax)*100)+'%'; if(R.beat){ R.beat.t+=dt; const k=Math.min(1,R.beat.t/0.45); const e=1-Math.pow(1-k,3); R.beat.cur=e*9.6; R.beat.x=lerp(R.beat.x,b.x-0.55,dt*8); R.py=Math.max(0,0.5*Math.sin(k*Math.PI)); } b.tapT-=dt; if(b.taps>=b.needTaps&&b.phase==='beat'){ b.phase='finish'; b.finT=0; b.finT0=performance.now(); VOICE.boss(b.fam,'out'); impact(1.2,proj(b.x,1.4,14).x,proj(b.x,1.4,14).y,'#fff'); R.rgbSplit=0.4; SFX.play('boss'); SFX.play('clear'); const bp=proj(b.x,1.4,14); R.parts.push({x:bp.x,y:bp.y-60,t:0.9,c:'#fff',txt:'FINISH!',rot:-0.15}); for(let i=0;i<14;i++)R.parts.push({x:bp.x+rnd(-40,40),y:bp.y+rnd(-40,40),t:0.6,c:i%2?'#ffd23a':'#fff',dust:true,vx:rnd(-300,300)}); } else if(b.tapT<=0){ b.phase='fight'; b.hp=Math.max(1,Math.ceil(b.max/2)); b.hurtT=0.3; b.atk=2.5; R.beat=null; R.inv=Math.max(R.inv,1.5); toast('RECOVERED!'); setHint('보스가 회복했다 — 다시 SHIELD 폭탄을!',3); SFX.play('fail'); VOICE.boss(b.fam,'rec'); } }

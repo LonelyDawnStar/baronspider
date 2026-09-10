@@ -199,7 +199,11 @@ load(); dailyCheck(); renderAll(); renderCodex();
 // ===== 보스 보이스: 합성 웃음/신음 + (선택) 음성 합성 대사 =====
 const VOICE={on:true,tts:true,
   // 계열별 성대 파라미터: f0, 속도, 거칠기, 리버브, 음성합성 pitch/rate
-  PROF:{goblin:{f0:230,rate:0.13,rasp:0.5,verb:0.5,sp:1.6,sr:1.25,ha:[1,0.9,1.1,0.85,1.2,0.8]},vulture:{f0:150,rate:0.19,rasp:0.9,verb:0.4,sp:0.7,sr:1.05,ha:[1,1,0.9,0.95]},electro:{f0:190,rate:0.11,rasp:0.3,verb:0.6,sp:1.2,sr:1.35,ha:[1,1.1,1.2,1.3,1.4]},sand:{f0:85,rate:0.24,rasp:1.0,verb:0.5,sp:0.4,sr:0.85,ha:[1,0.95,0.9]},ock:{f0:115,rate:0.22,rasp:0.4,verb:0.6,sp:0.5,sr:0.9,ha:[1,0.96,0.92,0.88,0.84]},mysterio:{f0:170,rate:0.17,rasp:0.2,verb:1.2,sp:0.9,sr:0.95,ha:[1,1,1,1,1,1]},inheritor:{f0:100,rate:0.2,rasp:0.7,verb:0.9,sp:0.3,sr:0.8,ha:[1,0.9,0.8]},other:{f0:140,rate:0.16,rasp:0.5,verb:0.5,sp:1,sr:1,ha:[1,1,1]}},
+  PROF:{goblin:{f0:230,rate:0.13,rasp:0.5,verb:0.5,sp:1.6,sr:1.25,ha:[1,0.9,1.1,0.85,1.2,0.8]},vulture:{f0:150,rate:0.19,rasp:0.9,verb:0.4,sp:0.7,sr:1.05,ha:[1,1,0.9,0.95]},electro:{f0:190,rate:0.11,rasp:0.3,verb:0.6,sp:1.2,sr:1.35,ha:[1,1.1,1.2,1.3,1.4]},sand:{f0:85,rate:0.24,rasp:1.0,verb:0.5,sp:0.4,sr:0.85,ha:[1,0.95,0.9]},ock:{f0:115,rate:0.22,rasp:0.4,verb:0.6,sp:0.5,sr:0.9,ha:[1,0.96,0.92,0.88,0.84]},mysterio:{f0:170,rate:0.17,rasp:0.2,verb:1.2,sp:0.9,sr:0.95,ha:[1,1,1,1,1,1]},inheritor:{f0:100,rate:0.2,rasp:0.7,verb:0.9,sp:0.3,sr:0.8,ha:[1,0.9,0.8]},
+    ultron1:{f0:96,rate:0.26,rasp:0.85,verb:0.7,sp:0.3,sr:0.75,ha:[1,0.98,1.02,0.96]},
+    ultron2:{f0:118,rate:0.2,rasp:0.5,verb:0.8,sp:0.4,sr:0.9,ha:[1,1,1,1,1]},
+    ultron3:{f0:78,rate:0.22,rasp:0.6,verb:1.0,sp:0.25,sr:0.85,ha:[1,0.94,1.06,0.94,1]},
+    ultron4:{f0:58,rate:0.24,rasp:0.75,verb:1.3,sp:0.1,sr:0.78,ha:[1,1,0.92,1.08,0.9,1]},other:{f0:140,rate:0.16,rasp:0.5,verb:0.5,sp:1,sr:1,ha:[1,1,1]}},
   LINES:{goblin:{attack:['받아라!','호박 선물이다!'],in:['하하하하! 스파이더맨, 또 만났군!','이 도시는 곧 내 것이 된다!'],hurt:['크윽!','건방진 거미 녀석!'],beat:['이럴 수가… 이럴 수는 없어!'],out:['다음엔… 반드시…!'],rec:['하하! 아직 끝나지 않았다!']},
          vulture:{attack:['급강하!','칼날을 조심해라!'],in:['하늘은 내 영역이다, 꼬마야!','날개 소리가 들리나?'],hurt:['끄아악!','내 날개!'],beat:['안 돼, 떨어진다!'],out:['내… 날개가…!'],rec:['다시 날아오른다!']},
          electro:{attack:['방전!','타 버려라!'],in:['찌릿하게 해주지!','전력 최대! 하하하!'],hurt:['크아악!','합선이다!'],beat:['에너지가… 빠져나간다!'],out:['정전이다…!'],rec:['재충전 완료!']},
@@ -207,6 +211,10 @@ const VOICE={on:true,tts:true,
          ock:{attack:['촉수, 전개.','피할 수 없다.'],in:['과학의 힘 앞에 무릎 꿇어라.','촉수는 네 개, 너는 하나.'],hurt:['크흑!','계산 밖이다!'],beat:['불가능해… 내 계산은 완벽했는데!'],out:['실험은… 실패다…'],rec:['시스템 복구.']},
          mysterio:{attack:['환영이여, 나타나라!','속아 넘어가라!'],in:['환영의 무대에 온 것을 환영한다!','무엇이 진짜인지 알겠나?'],hurt:['커헉!','연기가 새어나간다!'],beat:['막이 내린다… 벌써?'],out:['커튼콜은… 없다…'],rec:['앙코르다!']},
          inheritor:{attack:['도망쳐 봐라.'],in:['토템의 냄새가 난다…','사냥을 시작하지.'],hurt:['흠!','재밌군.'],beat:['이 토템은… 강하다.'],out:['다른 세계에서… 다시…'],rec:['사냥은 계속된다.']},
+         ultron1:{attack:['조준. 발사.','표적 고정.'],in:['시제기 가동. 첫 번째 시험 대상 확인.','나는 첫 번째다. 뒤에는 더 나은 것들이 있다.'],hurt:['외장 손상.','오차 발생.'],beat:['시제기… 기능 정지…'],out:['자료는… 전송되었다…'],rec:['예비 회로 가동.']},
+         ultron2:{attack:['양포 개방.','피할 곳은 없다.'],in:['설계가 완성되었다. 나는 개선판이다.','앞선 기체의 실패는 전부 기록해 두었다.'],hurt:['장갑 관통.','흥미롭군.'],beat:['출력이… 떨어진다…'],out:['다음 기체가… 학습할 것이다…'],rec:['재구성 완료.']},
+         ultron3:{attack:['아암 전개.','정렬. 강타.'],in:['프라임 기동. 이 도시의 모든 기계가 내 팔이다.','너희는 고쳐 쓸 수 없는 종이다.'],hurt:['경미하다.','아직 여섯 개가 남았다.'],beat:['코어… 과부하…'],out:['나는 하나가 아니다…'],rec:['아암 재정렬.']},
+         ultron4:{attack:['분해.','전 차선 소거.'],in:['최종형이다. 앞선 셋은 이걸 위한 초안이었다.','평화를 원했다. 너희가 사라진 뒤의 평화를.'],hurt:['그 정도로는 부족하다.','나는 형태가 없다.'],beat:['불가능… 나는 어디에나 있는데…'],out:['하나의 껍데기일 뿐이다…'],rec:['재조립.']},
          other:{attack:['받아라!'],in:['덤벼라, 스파이더맨!'],hurt:['윽!'],beat:['이럴 수가!'],out:['크아악!'],rec:['아직이다!']}},
   // 합성 음절: 성대(톱니+펄스) → 두 개의 포먼트 밴드패스(A 모음 700/1200Hz) → 리버브
   syllable(f0,d,{g=0.35,delay=0,glide=0.7,rasp=0.5,verb=0.5,formant=[700,1200],vib=6}={}){ const S=SFX; if(!S.on||!S.ac||!this.on)return; const ac=S.ac,t=ac.currentTime+delay;
@@ -218,9 +226,16 @@ const VOICE={on:true,tts:true,
     formant.forEach((fq,i)=>{ const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=fq; bp.Q.value=i?6:4; const fg=ac.createGain(); fg.gain.value=i?0.7:1; mix.connect(bp); bp.connect(fg); fg.connect(out); });
     out.connect(S.master); if(S.verb&&verb){ const vg=ac.createGain(); vg.gain.value=verb; out.connect(vg); vg.connect(S.verb); }
     src.start(t); lfo.start(t); src.stop(t+d+0.05); lfo.stop(t+d+0.05); },
-  laugh(fam){ const p=this.PROF[fam]||this.PROF.other; let t=0; p.ha.forEach((m,i)=>{ const d=p.rate*(0.8+Math.random()*0.4); this.syllable(p.f0*m*(1+ (i===0?0.08:0)),d,{g:0.32,delay:t,glide:0.82,rasp:p.rasp,verb:p.verb,formant:i%2?[650,1100]:[750,1250]}); t+=d+p.rate*0.55; }); },
-  grunt(fam){ const p=this.PROF[fam]||this.PROF.other; this.syllable(p.f0*1.3,0.22,{g:0.4,glide:0.6,rasp:p.rasp+0.3,verb:p.verb*0.6,formant:[500,900],vib:0}); },
-  scream(fam){ const p=this.PROF[fam]||this.PROF.other; this.syllable(p.f0*1.8,1.1,{g:0.45,glide:0.35,rasp:p.rasp+0.4,verb:p.verb+0.4,formant:[600,1500],vib:9}); },
+  laugh(fam){ const p=this.PROF[fam]||this.PROF.other;
+    if(this.isBot(fam)){ let tt=0; for(let i=0;i<5;i++){ const d=p.rate*0.8; this.syllable(p.f0*(i%2?1.5:1),d,{g:0.3,delay:tt,glide:1,rasp:p.rasp*0.5,verb:p.verb,formant:[300+i*90,2600],vib:0}); tt+=d+p.rate*0.3; } return; }
+    let t=0; p.ha.forEach((m,i)=>{ const d=p.rate*(0.8+Math.random()*0.4); this.syllable(p.f0*m*(1+ (i===0?0.08:0)),d,{g:0.32,delay:t,glide:0.82,rasp:p.rasp,verb:p.verb,formant:i%2?[650,1100]:[750,1250]}); t+=d+p.rate*0.55; }); },
+  isBot(fam){ return /^ultron/.test(fam); },
+  grunt(fam){ const p=this.PROF[fam]||this.PROF.other; const bot=this.isBot(fam);
+    this.syllable(p.f0*1.3,0.22,{g:0.4,glide:bot?0.98:0.6,rasp:p.rasp+0.3,verb:p.verb*0.6,formant:bot?[320,2400]:[500,900],vib:0});
+    if(bot)this.syllable(p.f0*2.6,0.1,{g:0.16,delay:0.05,glide:1,rasp:0.1,verb:p.verb*0.4,formant:[1800,3200],vib:0}); },
+  scream(fam){ const p=this.PROF[fam]||this.PROF.other;
+    if(this.isBot(fam)){ this.syllable(p.f0*1.6,1.5,{g:0.42,glide:0.18,rasp:p.rasp,verb:p.verb+0.4,formant:[400,2200],vib:2}); SFX.noise(1.2,{g:0.14,type:'bandpass',f0:2600,f1:180,q:1.2,att:0.05,verb:0.8}); return; }
+    this.syllable(p.f0*1.8,1.1,{g:0.45,glide:0.35,rasp:p.rasp+0.4,verb:p.verb+0.4,formant:[600,1500],vib:9}); },
   maleVoice(){ if(!('speechSynthesis' in window))return null; const vs=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang)); return vs.find(v=>/InJoon|Hyunsu|GookMin|BongJin|인준|현수|국민|봉진|male(?!.*female)|남성/i.test(v.name))||null; }, // 남성 한국어 음성이 있을 때만 말함
   say(fam,kind,delay=0){ const lines=(this.LINES[fam]||this.LINES.other)[kind]; if(!lines)return; const p=this.PROF[fam]||this.PROF.other; const txt=lines[Math.floor(Math.random()*lines.length)];
     setTimeout(()=>{ if(R&&R.boss){ R.bubble={txt,t:2.4,kind}; } // 말풍선은 항상 표시
