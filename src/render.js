@@ -494,11 +494,18 @@ function updateHazards(dt){
     if(h.t>=h.tel&&!h.sfx){h.sfx=true;SFX.play(h.kind==='strike'?'bomb':'whoosh');R.shake=Math.max(R.shake,0.25);} }
   R.hazards=R.hazards.filter(h=>h.t<h.tel+h.dur+0.4);
 }
+// Patch 0.10: elapsed warning time changes blue to red; pulse never hides the lane.
+function hazardWarning(h){
+ const k=Math.max(0,Math.min(1,h.t/Math.max(0.001,h.tel)));
+ const r=Math.round(40+200*k),g=Math.round(145-100*k),b=Math.round(245-195*k);
+ const alpha=0.36+0.2*(0.5+0.5*Math.sin(h.t*Math.PI*4));
+ return {fill:`rgba(${r},${g},${b},${alpha})`,edge:`rgb(${r},${g},${b})`};
+}
 function drawHazards(){
   for(const h of R.hazards){ const k=h.t/h.tel; const act=h.t>=h.tel; const fade=act?Math.max(0,1-(h.t-h.tel)/(h.dur+0.4)):1;
     for(const l of h.lanes){ const lx=l-1;
       if(!act){ // 텔레그래프: 바닥 스트라이프 + 깜빡임
-        const a=proj(lx-0.45,0,1.5),b=proj(lx+0.45,0,1.5),c=proj(lx+0.45,0,9),d=proj(lx-0.45,0,9); const blink=(Math.floor(h.t*(6+k*14))%2)?0.55:0.25; ctx.fillStyle=`rgba(230,32,42,${blink*k+0.1})`; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill(); ctx.strokeStyle='#ffd23a'; ctx.lineWidth=3; ctx.setLineDash([12,8]); ctx.stroke(); ctx.setLineDash([]);
+        const a=proj(lx-0.45,0,1.5),b=proj(lx+0.45,0,1.5),c=proj(lx+0.45,0,9),d=proj(lx-0.45,0,9); const warning=hazardWarning(h); ctx.fillStyle=warning.fill; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill(); ctx.strokeStyle=warning.edge; ctx.lineWidth=4; ctx.setLineDash([12,8]); ctx.stroke(); ctx.setLineDash([]);
         const p=proj(lx,0,4); ctx.fillStyle='#fff'; ctx.font=`900 ${34*p.s}px ${canvasFont('--disp')}`; ctx.textAlign='center'; ctx.lineWidth=5; ctx.strokeStyle=INK; const lab=h.kind==='low'?'▲ JUMP':h.kind==='high'?'▼ SLIDE':h.soft?'⟳':'!'; ctx.strokeText(lab,p.x,p.y-40*p.s); ctx.fillText(lab,p.x,p.y-40*p.s);
         if(h.vis==='pumpkin'){ const fy=lerp(-3.5,0.4,k*k); const pp=proj(lx,Math.max(0,fy)+0.2,4); ctx.save(); ctx.translate(pp.x,pp.y); ctx.scale(pp.s,pp.s); ctx.rotate(h.t*6); blob(0,0,22,20,'#ff9a2b',5); ctx.fillStyle=INK; ctx.beginPath(); ctx.moveTo(-10,-6);ctx.lineTo(-3,-1);ctx.lineTo(-11,1);ctx.moveTo(10,-6);ctx.lineTo(3,-1);ctx.lineTo(11,1);ctx.fill(); ctx.fillRect(-9,7,18,4); ctx.restore(); }
         if(h.vis==='laser'){ const bp=proj(R.boss?R.boss.x:0,1.6,14); const tp=proj(lx,0.05,4); ctx.save(); ctx.setLineDash([10,10]); ctx.lineDashOffset=-h.t*40; ctx.strokeStyle=`rgba(201,130,31,${0.45+0.45*k})`; ctx.lineWidth=3+3*k; ctx.beginPath(); ctx.moveTo(bp.x,bp.y); ctx.lineTo(tp.x,tp.y); ctx.stroke(); ctx.restore(); ctx.strokeStyle='#c9821f'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(tp.x,tp.y,(26+10*Math.sin(h.t*10))*tp.s,0,7); ctx.stroke(); }
