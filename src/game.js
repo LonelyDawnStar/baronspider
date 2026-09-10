@@ -12,9 +12,9 @@ const ENERGY_MAX=5, ENERGY_MS=3*60*1000;
 let S=null;
 function fresh(){
   return {vials:1500,iso:60,energy:5,energyAt:now(),owned:{classic:{lv:1,xp:0,dup:0,rk:0},mangaverse:{lv:1,xp:0,dup:0,rk:0}},team:['classic','mangaverse',null],
-    issue:0,mission:0,done:[0,0,0,0,0,0,0],mdone:{},unl:{date:'',best:0,claimed:[]},event:{key:-1,best:0,claimed:[]},ops:[null,null,null],daily:{date:'',runs:0,dist:0,vials:0,enemies:0,bosses:0,claimed:[]},continues:0,stats:{runs:0,best:0,bossKills:0}};
+    issue:0,mission:0,done:Array(ISSUES.length).fill(0),mdone:{},unl:{date:'',best:0,claimed:[]},event:{key:-1,best:0,claimed:[]},ops:[null,null,null],daily:{date:'',runs:0,dist:0,vials:0,enemies:0,bosses:0,claimed:[]},continues:0,stats:{runs:0,best:0,bossKills:0}};
 }
-function load(){try{const j=localStorage.getItem(SAVE_KEY);if(j){S=Object.assign(fresh(),JSON.parse(j));}}catch(e){} if(!S)S=fresh(); normTeam(); tickEnergy();}
+function load(){try{const j=localStorage.getItem(SAVE_KEY);if(j){S=Object.assign(fresh(),JSON.parse(j));}}catch(e){} if(!S)S=fresh(); S.done=Array.from({length:ISSUES.length},(_,i)=>(S.done||[])[i]||0); normTeam(); tickEnergy();}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 function tickEnergy(){ if(S.energy>=ENERGY_MAX){S.energyAt=now();return;} const el=now()-S.energyAt; const g=Math.floor(el/ENERGY_MS); if(g>0){S.energy=Math.min(ENERGY_MAX,S.energy+g);S.energyAt=S.energy>=ENERGY_MAX?now():S.energyAt+g*ENERGY_MS;} }
 function dailyCheck(){const t=todayKey(); if(S.daily.date!==t){S.daily={date:t,runs:0,dist:0,vials:0,enemies:0,bosses:0,claimed:[]};} if(S.unl.date!==t){S.unl={date:t,best:0,claimed:[]};} const wk=Math.floor(now()/864e5/7); if(S.event.key!==wk){S.event={key:wk,best:0,claimed:[]};}}
@@ -401,7 +401,7 @@ function spawn(){
   if(seg==='run'||seg==='boss'){
     const r=Math.random(); const l=lanes[0];
     if(seg==='boss'&&R.boss&&R.boss.phase==='intro'){ /* 등장 중: 장애물 없음 */ }
-    else if(seg==='boss'&&isUltronBoss(R.boss)){ if(r<0.45)push({type:'bomb',lane:l}); }
+    else if(seg==='boss'&&(isUltronBoss(R.boss)||isInfinityBoss(R.boss))){ if(r<0.45)push({type:'bomb',lane:l}); }
     else if(seg==='boss'&&R.boss&&R.boss.fam==='mysterio'){ // 미니언과 폭탄을 함께 (폭탄이 없으면 체력을 깎을 수단이 없다)
       if(Math.random()<0.45)push({type:'bomb',lane:l});
       if(Math.random()<0.5)push({type:'enemy',kind:'minion',lane:lanes[1],shot:false}); }

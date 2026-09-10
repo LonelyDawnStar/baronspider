@@ -111,7 +111,7 @@ function drawEnemy(o,s){
 }
 
 // --- 보스 계열 판정 ---
-const FAM=n=>/울트론 MK/.test(n)?'ultron1':/울트론\(코믹스\)/.test(n)?'ultron2':/울트론 프라임/.test(n)?'ultron3':/얼티밋 울트론/.test(n)?'ultron4':/고블린|메너스/.test(n)?'goblin':/벌처/.test(n)?'vulture':/일렉트로/.test(n)?'electro':/샌드맨/.test(n)?'sand':/옥토퍼스/.test(n)?'ock':/미스테리오|미스테리온/.test(n)?'mysterio':/칸|몰런|데이모스|제닉스|솔루스/.test(n)?'inheritor':'other';
+const FAM=n=>({'프록시마 미드나이트':'proxima','콜버스 글레이브':'corvus','컬 옵시디언':'cull','에보니 모':'maw','타노스(미완)':'thanos0'}[n])||(/울트론 MK/.test(n)?'ultron1':/울트론\(코믹스\)/.test(n)?'ultron2':/울트론 프라임/.test(n)?'ultron3':/얼티밋 울트론/.test(n)?'ultron4':/고블린|메너스/.test(n)?'goblin':/벌처/.test(n)?'vulture':/일렉트로/.test(n)?'electro':/샌드맨/.test(n)?'sand':/옥토퍼스/.test(n)?'ock':/미스테리오|미스테리온/.test(n)?'mysterio':/칸|몰런|데이모스|제닉스|솔루스/.test(n)?'inheritor':'other');
 const VARIANT_PAL={
  '골드 고블린':['#f2b33d','#5a3a00'],'메너스':['#c02030','#3a0a10'],'그레이 고블린':['#8a93a8','#2b2f45'],'그린 고블린':['#4fbf5a','#5b2d8e'],'하우스 오브 M 고블린':['#2fd3e6','#1a1a4a'],
  '벌처':['#3f9a4a','#c9d1e3'],'클래식 벌처':['#3fa34d','#eeeeee'],'얼티밋 벌처':['#6b7280','#b0b8c8'],'레드 벌처':['#e6202a','#7a1015'],'다크 벌처':['#2b2f45','#111'],
@@ -121,8 +121,8 @@ const VARIANT_PAL={
  '울트론 MK.1':['#9aa0ac','#c9821f'],'울트론(코믹스)':['#d5dbe8','#c02030'],'울트론 프라임':['#5a6473','#2fd3e6'],'얼티밋 울트론':['#2b3140','#b26df0'],
  '클래식 미스테리오':['#3fbf7a','#6a3fd0'],'다크 미스테리오':['#1f5a3a','#2b1f45'],'미스테리온':['#2fd3e6','#111'],'슈페리어 미스테리온':['#e6202a','#6a3fd0'],'미스테리오':['#3fbf7a','#3f9a5a'],
 };
-const FAM_COL={goblin:['#4fbf5a','#5b2d8e'],vulture:['#3f9a4a','#c9d1e3'],electro:['#ffd23a','#2a6cf0'],sand:['#d9b47a','#3a7d4e'],ock:['#3d8a3d','#e0c48a'],mysterio:['#3fbf7a','#6a3fd0'],inheritor:['#c02030','#1a1a26'],ultron1:['#9aa0ac','#c9821f'],ultron2:['#d5dbe8','#c02030'],ultron3:['#5a6473','#2fd3e6'],ultron4:['#2b3140','#b26df0'],other:['#8492b8','#2b2f45']};
-const FAM_INFO={goblin:'녹색 가스 구름과 펌킨 폭탄을 차선에 깐다 — 표시된 차선을 피하라',vulture:'칼날 날개 장애물(부딪히면 튕겨남·콤보 끊김)과 저공 급강하(슬라이드)',electro:'두 차선에 전류를 흘린다 — 안전한 한 차선으로',sand:'모래 주먹이 바닥을 쓸어온다 — 점프로 넘어라. 모래 기둥 차선은 피할 것',ock:'문어다리 장애물이 차선을 순서대로 내려찍는다(부딪히면 튕겨남). 저공 스윕은 점프',mysterio:'거대화한 미스테리오 — 쉴드를 점프/슬라이드로 공격해야 피해. 가짜 쉴드와 장갑·눈 장식 차선을 피하라',inheritor:'모든 패턴을 섞어 쓴다 — 예고 표시를 끝까지 보라',
+const FAM_COL={proxima:['#adb9c5','#b8a060'],corvus:['#a3a49b','#252629'],cull:['#737d56','#383940'],maw:['#b1bec5','#343b47'],thanos0:['#9475b4','#b8a060'],goblin:['#4fbf5a','#5b2d8e'],vulture:['#3f9a4a','#c9d1e3'],electro:['#ffd23a','#2a6cf0'],sand:['#d9b47a','#3a7d4e'],ock:['#3d8a3d','#e0c48a'],mysterio:['#3fbf7a','#6a3fd0'],inheritor:['#c02030','#1a1a26'],ultron1:['#9aa0ac','#c9821f'],ultron2:['#d5dbe8','#c02030'],ultron3:['#5a6473','#2fd3e6'],ultron4:['#2b3140','#b26df0'],other:['#8492b8','#2b2f45']};
+const FAM_INFO={proxima:'창 투척은 차선 이동, 낮은 창은 점프',corvus:'글레이브 연속 베기는 차선 이동, 높은 횡베기는 슬라이드',cull:'망치 강타는 차선 이동, 지면 충격파는 점프',maw:'공중 잔해가 지정 차선으로 떨어진다. 남은 차선으로 이동',thanos0:'스톤 없는 타노스 — 주먹은 차선 이동, 지면 강타는 점프, 높은 휘두르기는 슬라이드',goblin:'녹색 가스 구름과 펌킨 폭탄을 차선에 깐다 — 표시된 차선을 피하라',vulture:'칼날 날개 장애물(부딪히면 튕겨남·콤보 끊김)과 저공 급강하(슬라이드)',electro:'두 차선에 전류를 흘린다 — 안전한 한 차선으로',sand:'모래 주먹이 바닥을 쓸어온다 — 점프로 넘어라. 모래 기둥 차선은 피할 것',ock:'문어다리 장애물이 차선을 순서대로 내려찍는다(부딪히면 튕겨남). 저공 스윕은 점프',mysterio:'거대화한 미스테리오 — 쉴드를 점프/슬라이드로 공격해야 피해. 가짜 쉴드와 장갑·눈 장식 차선을 피하라',inheritor:'모든 패턴을 섞어 쓴다 — 예고 표시를 끝까지 보라',
  ultron1:'시제기 — 한 차선에 조준 레이저를 쏜다. 느리고 예고가 길다',
  ultron2:'양손 방사포로 두 차선을 동시에 지진다 — 남은 한 차선으로. 가끔 저공 돌진(점프)',
  ultron3:'등 뒤 아암으로 차선을 순서대로 내려찍고(튕겨남), 센트리 드론을 사출한다. 예고가 짧다',
@@ -246,19 +246,63 @@ function drawUltronRevision(fam,t){
 }
 
 // Patch 0.3: conservative animated silhouette bounds in model coordinates.
-const BOSS_TOP={goblin:185,vulture:215,electro:210,sand:180,ock:180,mysterio:165,inheritor:180,ultron1:195,ultron2:195,ultron3:205,ultron4:215,other:165};
+const BOSS_TOP={proxima:220,corvus:240,cull:225,maw:200,thanos0:210,goblin:185,vulture:215,electro:210,sand:180,ock:180,mysterio:165,inheritor:180,ultron1:195,ultron2:195,ultron3:205,ultron4:215,other:165};
 function bossModelScale(b,projectionScale){return projectionScale*3.1*(b.fam==='mysterio'?1.7:1);}
 function bossHudAnchor(b){
   const p=proj(b.x,0.5,14);
   // Reserve 42px for the bottom-most beat label, then a 12px body gap.
   return {x:p.x,y:p.y-(BOSS_TOP[b.fam]||BOSS_TOP.other)*bossModelScale(b,p.s)-54};
 }
+// Issue 8: original Canvas silhouettes; no imported picture assets.
+function drawInfinityBoss(fam,t){
+ const c={proxima:['#adb9c5','#252936'],corvus:['#a3a49b','#252629'],cull:['#737d56','#383940'],maw:['#b1bec5','#343b47'],thanos0:['#9475b4','#303344']}[fam];
+ const heavy=fam==='cull'||fam==='thanos0',gold=fam==='cull'?'#8c6142':'#b8a060';
+ const plate=(pts,col)=>inkPath(()=>pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)),col,3);
+ const line=(pts,col,w)=>{ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap='round';ctx.stroke();};
+ ctx.save();ctx.scale(heavy?1.6:1.08,heavy?1.35:1.12);
+ if(fam==='maw')ctx.translate(0,-12+Math.sin(t*2)*3);
+ if(fam==='corvus'||fam==='maw')plate([[-21,-105],[-32,0],[0,-12],[33,0],[22,-105]],fam==='corvus'?'#171c26':'#707f8b');
+ if(fam==='proxima')plate([[-12,-132],[10,-140],[24,-121],[41,-111],[15,-111],[-18,-116]],'#292934');
+ const P=poseFor('idle',t,{override:{lArm:.3,rArm:.65,armsUp:.12,lSpread:.55,rSpread:.55}});P.face='front';
+ drawHero(0,0,1,c[0],c[1],P,{extra:({headY,shY})=>{
+  plate([[-18,shY-5],[0,shY+3],[18,shY-5],[14,shY+32],[0,shY+40],[-14,shY+32]],c[1]);
+  line([[-17,shY-4],[0,shY+8],[17,shY-4]],gold,4);
+  if(heavy){for(const side of[-1,1]){blob(side*24,shY,14,11,c[1],3);line([[side*16,shY-6],[side*29,shY-3]],gold,3);}blob(0,headY,18,19,c[0],3);}
+  else blob(0,headY,12,19,c[0],3);
+  ctx.fillStyle=fam==='cull'?'#dcc976':'#f0e6da';ctx.fillRect(-9,headY-3,6,2);ctx.fillRect(3,headY-3,6,2);
+  line([[-5,headY+9],[5,headY+9]],'#30303a',2);
+  if(fam==='thanos0'){
+   for(let x=-9;x<=9;x+=4)line([[x,headY+12],[x,headY+17]],'#57416c',1.4);
+   plate([[-16,shY+1],[-6,shY+7],[-8,shY+20],[-17,shY+13]],gold);
+   plate([[16,shY+1],[6,shY+7],[8,shY+20],[17,shY+13]],gold);
+   // Plain gauntlet: no stones, sockets, beams or snap.
+   blob(44,-70,10,11,gold,3);for(let i=0;i<3;i++)line([[38+i*4,-75],[38+i*4,-69]],'#6b5835',1.5);
+  }
+  if(fam==='cull'){for(const side of[-1,1])plate([[side*11,headY-12],[side*20,headY-26],[side*18,headY-5]],'#5b6549');line([[-10,headY+7],[0,headY+11],[10,headY+7]],'#293021',3);}
+  if(fam==='maw'){line([[0,headY-2],[-2,headY+5],[3,headY+5]],'#788790',2);for(let i=0;i<5;i++)line([[-4,shY+i*6],[4,shY+i*6]],gold,2);}
+  if(fam==='corvus'||fam==='proxima')for(const side of[-1,1])plate([[side*10,headY-6],[side*20,headY-28],[side*15,headY-1]],fam==='corvus'?gold:'#454652');
+ }});
+ if(fam==='proxima'){
+  line([[-62,-150],[66,-58]],'#141923',7);line([[-62,-150],[66,-58]],gold,3);
+  plate([[-62,-150],[-88,-181],[-76,-154],[-57,-140]],'#79d5e3');
+ }else if(fam==='corvus'){
+  line([[-44,0],[-52,-162]],gold,5);plate([[-52,-151],[-65,-199],[-43,-169],[-40,-150]],'#b2a777');
+  plate([[-50,-164],[-34,-154],[-28,-167],[-32,-143],[-48,-146]],gold);
+ }else if(fam==='cull'){
+  line([[37,-77],[62,-31]],'#7a6a53',6);plate([[47,-50],[71,-61],[84,-39],[58,-24]],'#43454e');line([[55,-47],[71,-51]],'#a4a7ac',3);
+ }else if(fam==='maw'){
+  for(let i=0;i<4;i++){const x=(i<2?-1:1)*(46+i%2*13),y=-80-i%2*45+Math.sin(t*1.5+i)*7;ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(t+i)*.2);plate([[-7,-8],[6,-10],[10,4],[-4,9]],'#6c7683');ctx.restore();}
+ }
+ ctx.restore();
+}
+
 // --- 보스 모델 ---
 function drawBossModel(b,s,t){
   const fam=b.fam; const [c1,c2]=VARIANT_PAL[b.name]||FAM_COL[fam]; const c2d=shade(c2,-0.3); const bob=Math.sin(t*2.2)*6; const hurt=b.hurtT>0; const flash=hurt&&Math.floor(t*30)%2===0;
   ctx.save(); ctx.scale(s,s); ctx.translate(0,bob); const shieldPulse=Math.max(0,1-(t-(b.shieldHitAt??-99))/0.22); if(shieldPulse)ctx.translate(0,-3*Math.sin(shieldPulse*Math.PI)); if(flash){ctx.globalAlpha*=0.7;}
   const P=poseFor('idle',t*1.3,{override:{lArm:0.6,rArm:0.6,armsUp:0.3,lSpread:0.4,rSpread:0.4}}); P.face='front';
   switch(fam){
+    case 'proxima': case 'corvus': case 'cull': case 'maw': case 'thanos0': drawInfinityBoss(fam,t);break;
     case 'goblin': { // 글라이더
       ctx.save(); ctx.translate(0,8); ctx.rotate(Math.sin(t*2)*0.06); inkPath(()=>{ctx.moveTo(-130,0);ctx.quadraticCurveTo(-90,-40,-30,-10);ctx.lineTo(30,-10);ctx.quadraticCurveTo(90,-40,130,0);ctx.lineTo(90,18);ctx.lineTo(40,6);ctx.lineTo(0,26);ctx.lineTo(-40,6);ctx.lineTo(-90,18);},c2,6); ctx.fillStyle=c1; ctx.beginPath(); ctx.arc(-110,4,5,0,7); ctx.arc(110,4,5,0,7); ctx.fill(); ctx.fillStyle='#ff9a2b'; ctx.beginPath(); ctx.moveTo(-20,26); ctx.lineTo(0,50+Math.random()*14); ctx.lineTo(20,26); ctx.fill(); ctx.restore();
       drawHero(0,0,1,c1,c2,P,{extra:({headY})=>{ inkPath(()=>{ctx.moveTo(-18,headY-6);ctx.lineTo(-6,headY-46);ctx.lineTo(0,headY-14);ctx.lineTo(6,headY-46);ctx.lineTo(18,headY-6);},c2,4); ctx.fillStyle=c1==='#ffd23a'?'#fff':'#ffd23a'; ctx.beginPath(); ctx.ellipse(-7,headY-2,4,6,0,0,7); ctx.ellipse(7,headY-2,4,6,0,0,7); ctx.fill(); ctx.strokeStyle=INK; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,headY+6,8,0.2,Math.PI-0.2); ctx.stroke(); }}); break; }
@@ -293,10 +337,16 @@ function drawBossModel(b,s,t){
 // --- 보스 패턴 정의 ---
 // hazard: {kind:'strike'|'low'|'high', lanes:[..], tel, dur, fam, t:0, vis}
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
-const FAM_IDX={goblin:1,vulture:2,electro:3,sand:4,ock:5,mysterio:6,inheritor:7,ultron1:9,ultron2:10,ultron3:11,ultron4:12,other:8};
+const FAM_IDX={proxima:13,corvus:14,cull:15,maw:16,thanos0:17,goblin:1,vulture:2,electro:3,sand:4,ock:5,mysterio:6,inheritor:7,ultron1:9,ultron2:10,ultron3:11,ultron4:12,other:8};
 let PR=Math.random; // 패턴용 RNG (보스 시작 시 시드 고정)
 function seedBossPattern(b){ b.rng=mulberry32((R.mode==='story'?R.issue:R.issue+10)*97+FAM_IDX[b.fam]*13+1); }
 const PATTERNS={
+ proxima(){const l=Math.floor(PR()*3);return [{kind:'strike',lanes:[l],tel:1.15,dur:.3,vis:'spear'},{kind:'low',lanes:[0,1,2],tel:2.1,dur:.25,vis:'spear'}];},
+ corvus(){const l=Math.floor(PR()*3);return [{kind:'strike',lanes:[l],tel:1.05,dur:.3,vis:'glaive'},{kind:'strike',lanes:[(l+1)%3],tel:1.95,dur:.3,vis:'glaive'},{kind:'high',lanes:[0,1,2],tel:2.9,dur:.25,vis:'glaive'}];},
+ cull(){return [{kind:'strike',lanes:[Math.floor(PR()*3)],tel:1.3,dur:.4,vis:'hammer'},{kind:'low',lanes:[0,1,2],tel:2.4,dur:.3,vis:'groundwave'}];},
+ maw(){const safe=Math.floor(PR()*3);return [{kind:'strike',lanes:[0,1,2].filter(l=>l!==safe),tel:1.2,dur:.35,vis:'rubble'},{kind:'strike',lanes:[safe],tel:2.2,dur:.35,vis:'rubble'}];},
+ thanos0(){const l=Math.floor(PR()*3);return [{kind:'strike',lanes:[l],tel:1.05,dur:.3,vis:'gauntlet'},{kind:PR()<.5?'low':'high',lanes:[0,1,2],tel:2.05,dur:.3,vis:'groundwave'},{kind:'strike',lanes:[(l+1)%3],tel:3.05,dur:.3,vis:'gauntlet'}];},
+
   goblin(b){ const l=Math.floor(PR()*3); return [{kind:'strike',lanes:[l],tel:1.2,dur:1.6,vis:'gas'},{kind:'strike',lanes:[(l+1+Math.floor(PR()*2))%3],tel:1.9,dur:0.45,vis:'pumpkin'}]; },
   vulture(b){ return PR()<0.5?[{kind:'high',lanes:[0,1,2],tel:1.3,dur:0.5,vis:'swoop'}]:[{kind:'strike',lanes:[Math.floor(PR()*3)],tel:1.0,dur:1.4,vis:'blade',soft:true},{kind:'strike',lanes:[Math.floor(PR()*3)],tel:1.6,dur:1.4,vis:'blade',soft:true}]; },
   electro(b){ const safe=Math.floor(PR()*3); return [{kind:'strike',lanes:[0,1,2].filter(x=>x!==safe),tel:1.4,dur:0.7,vis:'arc'}]; },
@@ -331,6 +381,7 @@ const PATTERNS={
   other(b){ return [{kind:'strike',lanes:[Math.floor(PR()*3)],tel:1.1,dur:0.5,vis:'debris'}]; },
 };
 // Finish each attack before scheduling another; particles may continue fading.
+const isInfinityBoss=b=>!!b&&['proxima','corvus','cull','maw','thanos0'].includes(b.fam);
 const isUltronBoss=b=>!!b&&/^ultron[1-4]$/.test(b.fam);
 function bossPatternBusy(b){
   return R.hazards.some(h=>h.t<h.tel+h.dur+0.4)||
@@ -350,7 +401,7 @@ function bossPattern(b){
   hz.sort((a,b)=>a.tel-b.tel).forEach(h=>{
     h.t=0;h.fam=b.fam;h.done=false;
     h.tel*=(b.telK||1)*R.mods.telMul;h.telAdj=true;
-    if(isUltronBoss(b)){
+    if(isUltronBoss(b)||isInfinityBoss(b)){
       // Apply recovery AFTER difficulty modifiers. Allow landing / a full slide.
       h.tel=Math.max(h.tel,previousEnd?previousEnd+0.45:0.9);
       previousEnd=h.tel+h.dur;
@@ -385,6 +436,11 @@ function drawHazards(){
       } else { // 발동 비주얼
         ctx.globalAlpha=fade; const p=proj(lx,0,4); ctx.save(); ctx.translate(p.x,p.y); ctx.scale(p.s,p.s);
         switch(h.vis){
+          case 'spear':case 'glaive':{const yy=h.kind==='low'?-12:-150;ctx.strokeStyle=h.vis==='spear'?'#7fd8df':'#c1ad76';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(-85,yy-20);ctx.lineTo(85,yy+20);ctx.stroke();inkPath(()=>{ctx.moveTo(85,yy+20);ctx.lineTo(112,yy+9);ctx.lineTo(101,yy+35);},'#e1d8b1',3);break;}
+          case 'hammer':case 'gauntlet':{const yy=-110+Math.min(1,(h.t-h.tel)/.2)*80;ctx.fillStyle=h.vis==='hammer'?'#626878':'#b8a060';ctx.strokeStyle=INK;ctx.lineWidth=5;ctx.beginPath();ctx.roundRect(-42,yy,84,58,9);ctx.fill();ctx.stroke();break;}
+          case 'groundwave':{ctx.strokeStyle='#d4b58d';ctx.lineWidth=7;ctx.beginPath();ctx.ellipse(0,h.kind==='high'?-160:-8,45+(1-fade)*150,18,0,0,7);ctx.stroke();break;}
+          case 'rubble':{for(let j=0;j<5;j++){const yy=-160+Math.min(1,(h.t-h.tel)/.25)*140;ctx.fillStyle=j%2?'#71818c':'#9a9291';ctx.fillRect(-60+j*24,yy-j%2*22,18,24);}break;}
+
           case 'pumpkin': case 'debris': case 'smoke': { const col=h.vis==='smoke'?'#3fbf7a':h.vis==='pumpkin'?'#ff9a2b':'#9aa3b8'; const r=(1-fade)*160+40; for(let i=0;i<8;i++){ const a=i*Math.PI/4+h.t; blob(Math.cos(a)*r*0.6,-20+Math.sin(a)*r*0.35,26,26,col,4); } inkPath(()=>{ for(let i=0;i<12;i++){ const a=i*Math.PI/6; const rr=i%2?r*0.5:r; ctx.lineTo(Math.cos(a)*rr,-30+Math.sin(a)*rr*0.6);} },h.vis==='smoke'?'#a8f0c8':'#ffd23a',5); break; }
           case 'gas': { const r=(1-fade)*20+70; for(let i=0;i<7;i++){ const a=i*0.9+h.t*1.5; blob(Math.cos(a)*r*0.7,-40+Math.sin(a)*r*0.35-i*4,34,30,i%2?'#4fbf5a':'#2f8a3a',4); } ctx.fillStyle='#0d0f1c'; ctx.font='900 26px sans-serif'; ctx.textAlign='center'; ctx.fillText('☠',0,-40); break; }
           case 'blade': { ctx.save(); ctx.rotate(h.t*10); for(let i=0;i<4;i++){ ctx.rotate(Math.PI/2); inkPath(()=>{ctx.moveTo(0,0);ctx.lineTo(90,-18);ctx.lineTo(110,0);ctx.lineTo(90,18);},'#c9d1e3',4); } blob(0,0,16,16,'#3f9a4a',4); ctx.restore(); break; }
@@ -415,6 +471,12 @@ function drawEnv(issue,off,seg){
   const col=ISSUE_ENV_COLORS[issue]; const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,col[0]); g.addColorStop(0.45,col[1]); g.addColorStop(1,'#05070f'); ctx.fillStyle=g; ctx.fillRect(-10,-10,W+20,H+20);
   const par=(k,fn)=>{ const span=W+300; for(let i=0;i<14;i++){ const x=((i*211-off*k)%span+span)%span-150; fn(x,i); } };
   switch(issue){
+    case 7:{
+      ctx.fillStyle='#161722';par(.12,(x,i)=>{const bh=85+(i*67)%160;ctx.fillRect(x,HOR-bh,100,bh+10);});
+      ctx.strokeStyle='#665869';ctx.lineWidth=20;ctx.beginPath();ctx.ellipse(W*.72,HOR-150,85,115,-.3,0,7);ctx.stroke();ctx.strokeStyle='#bf9762';ctx.lineWidth=3;ctx.stroke();
+      ctx.fillStyle='#37303c';par(.3,(x,i)=>{const bh=30+(i*29)%70;ctx.fillRect(x,HOR-bh,70,bh+5);ctx.fillStyle='#d9a46d';ctx.fillRect(x+12,HOR-bh+9,18,3);ctx.fillStyle='#37303c';});break;
+    }
+
     case 0: // 옥상: 물탱크·안테나
       ctx.fillStyle='#0a0f22'; par(0.12,(x,i)=>{const bh=80+((i*91)%150);ctx.fillRect(x,HOR-bh,90+((i*37)%60),bh+8);});
       ctx.fillStyle='#141b3a'; par(0.3,(x,i)=>{ if(i%2)return; const bh=30+((i*53)%50);ctx.fillRect(x,HOR-bh,110,bh+8); if(i%4===0){ctx.fillRect(x+30,HOR-bh-40,34,40);ctx.fillRect(x+26,HOR-bh-44,42,6);ctx.fillRect(x+34,HOR-bh-58,26,14);} if(i%4===2){ctx.fillRect(x+80,HOR-bh-60,3,60);ctx.fillRect(x+70,HOR-bh-50,23,2);}});
