@@ -111,7 +111,7 @@ function drawEnemy(o,s){
 }
 
 // --- 보스 계열 판정 ---
-const FAM=n=>({'프록시마 미드나이트':'proxima','콜버스 글레이브':'corvus','컬 옵시디언':'cull','에보니 모':'maw','타노스(미완)':'thanos0'}[n])||(/울트론 MK/.test(n)?'ultron1':/울트론\(코믹스\)/.test(n)?'ultron2':/울트론 프라임/.test(n)?'ultron3':/얼티밋 울트론/.test(n)?'ultron4':/고블린|메너스/.test(n)?'goblin':/벌처/.test(n)?'vulture':/일렉트로/.test(n)?'electro':/샌드맨/.test(n)?'sand':/옥토퍼스/.test(n)?'ock':/미스테리오|미스테리온/.test(n)?'mysterio':/칸|몰런|데이모스|제닉스|솔루스/.test(n)?'inheritor':'other');
+const FAM=n=>endgameStage(n)?'thanosEnd':({'프록시마 미드나이트':'proxima','콜버스 글레이브':'corvus','컬 옵시디언':'cull','에보니 모':'maw','타노스(미완)':'thanos0'}[n])||(/울트론 MK/.test(n)?'ultron1':/울트론\(코믹스\)/.test(n)?'ultron2':/울트론 프라임/.test(n)?'ultron3':/얼티밋 울트론/.test(n)?'ultron4':/고블린|메너스/.test(n)?'goblin':/벌처/.test(n)?'vulture':/일렉트로/.test(n)?'electro':/샌드맨/.test(n)?'sand':/옥토퍼스/.test(n)?'ock':/미스테리오|미스테리온/.test(n)?'mysterio':/칸|몰런|데이모스|제닉스|솔루스/.test(n)?'inheritor':'other');
 const VARIANT_PAL={
  '골드 고블린':['#f2b33d','#5a3a00'],'메너스':['#c02030','#3a0a10'],'그레이 고블린':['#8a93a8','#2b2f45'],'그린 고블린':['#4fbf5a','#5b2d8e'],'하우스 오브 M 고블린':['#2fd3e6','#1a1a4a'],
  '벌처':['#3f9a4a','#c9d1e3'],'클래식 벌처':['#3fa34d','#eeeeee'],'얼티밋 벌처':['#6b7280','#b0b8c8'],'레드 벌처':['#e6202a','#7a1015'],'다크 벌처':['#2b2f45','#111'],
@@ -121,8 +121,8 @@ const VARIANT_PAL={
  '울트론 MK.1':['#9aa0ac','#c9821f'],'울트론(코믹스)':['#d5dbe8','#c02030'],'울트론 프라임':['#5a6473','#2fd3e6'],'얼티밋 울트론':['#2b3140','#b26df0'],
  '클래식 미스테리오':['#3fbf7a','#6a3fd0'],'다크 미스테리오':['#1f5a3a','#2b1f45'],'미스테리온':['#2fd3e6','#111'],'슈페리어 미스테리온':['#e6202a','#6a3fd0'],'미스테리오':['#3fbf7a','#3f9a5a'],
 };
-const FAM_COL={proxima:['#adb9c5','#b8a060'],corvus:['#a3a49b','#252629'],cull:['#737d56','#383940'],maw:['#b1bec5','#343b47'],thanos0:['#9475b4','#b8a060'],goblin:['#4fbf5a','#5b2d8e'],vulture:['#3f9a4a','#c9d1e3'],electro:['#ffd23a','#2a6cf0'],sand:['#d9b47a','#3a7d4e'],ock:['#3d8a3d','#e0c48a'],mysterio:['#3fbf7a','#6a3fd0'],inheritor:['#c02030','#1a1a26'],ultron1:['#9aa0ac','#c9821f'],ultron2:['#d5dbe8','#c02030'],ultron3:['#5a6473','#2fd3e6'],ultron4:['#2b3140','#b26df0'],other:['#8492b8','#2b2f45']};
-const FAM_INFO={proxima:'창 투척은 차선 이동, 낮은 창은 점프',corvus:'글레이브 연속 베기는 차선 이동, 높은 횡베기는 슬라이드',cull:'망치 강타는 차선 이동, 지면 충격파는 점프',maw:'공중 잔해가 지정 차선으로 떨어진다. 남은 차선으로 이동',thanos0:'스톤 없는 타노스 — 주먹은 차선 이동, 지면 강타는 점프, 높은 휘두르기는 슬라이드',goblin:'녹색 가스 구름과 펌킨 폭탄을 차선에 깐다 — 표시된 차선을 피하라',vulture:'칼날 날개 장애물(부딪히면 튕겨남·콤보 끊김)과 저공 급강하(슬라이드)',electro:'두 차선에 전류를 흘린다 — 안전한 한 차선으로',sand:'모래 주먹이 바닥을 쓸어온다 — 점프로 넘어라. 모래 기둥 차선은 피할 것',ock:'문어다리 장애물이 차선을 순서대로 내려찍는다(부딪히면 튕겨남). 저공 스윕은 점프',mysterio:'거대화한 미스테리오 — 쉴드를 점프/슬라이드로 공격해야 피해. 가짜 쉴드와 장갑·눈 장식 차선을 피하라',inheritor:'모든 패턴을 섞어 쓴다 — 예고 표시를 끝까지 보라',
+const FAM_COL={thanosEnd:['#9272a2','#d5b265'],proxima:['#adb9c5','#b8a060'],corvus:['#a3a49b','#252629'],cull:['#737d56','#383940'],maw:['#b1bec5','#343b47'],thanos0:['#9475b4','#b8a060'],goblin:['#4fbf5a','#5b2d8e'],vulture:['#3f9a4a','#c9d1e3'],electro:['#ffd23a','#2a6cf0'],sand:['#d9b47a','#3a7d4e'],ock:['#3d8a3d','#e0c48a'],mysterio:['#3fbf7a','#6a3fd0'],inheritor:['#c02030','#1a1a26'],ultron1:['#9aa0ac','#c9821f'],ultron2:['#d5dbe8','#c02030'],ultron3:['#5a6473','#2fd3e6'],ultron4:['#2b3140','#b26df0'],other:['#8492b8','#2b2f45']};
+const FAM_INFO={thanosEnd:'스톤 기술은 누적된다. ▲ 점프 / ▼ 슬라이드 / 차선 이동. 핑거 스냅은 SAFE 차선으로!',proxima:'창 투척은 차선 이동, 낮은 창은 점프',corvus:'글레이브 연속 베기는 차선 이동, 높은 횡베기는 슬라이드',cull:'망치 강타는 차선 이동, 지면 충격파는 점프',maw:'공중 잔해가 지정 차선으로 떨어진다. 남은 차선으로 이동',thanos0:'스톤 없는 타노스 — 주먹은 차선 이동, 지면 강타는 점프, 높은 휘두르기는 슬라이드',goblin:'녹색 가스 구름과 펌킨 폭탄을 차선에 깐다 — 표시된 차선을 피하라',vulture:'칼날 날개 장애물(부딪히면 튕겨남·콤보 끊김)과 저공 급강하(슬라이드)',electro:'두 차선에 전류를 흘린다 — 안전한 한 차선으로',sand:'모래 주먹이 바닥을 쓸어온다 — 점프로 넘어라. 모래 기둥 차선은 피할 것',ock:'문어다리 장애물이 차선을 순서대로 내려찍는다(부딪히면 튕겨남). 저공 스윕은 점프',mysterio:'거대화한 미스테리오 — 쉴드를 점프/슬라이드로 공격해야 피해. 가짜 쉴드와 장갑·눈 장식 차선을 피하라',inheritor:'모든 패턴을 섞어 쓴다 — 예고 표시를 끝까지 보라',
  ultron1:'시제기 — 한 차선에 조준 레이저를 쏜다. 느리고 예고가 길다',
  ultron2:'양손 방사포로 두 차선을 동시에 지진다 — 남은 한 차선으로. 가끔 저공 돌진(점프)',
  ultron3:'등 뒤 아암으로 차선을 순서대로 내려찍고(튕겨남), 센트리 드론을 사출한다. 예고가 짧다',
@@ -246,7 +246,7 @@ function drawUltronRevision(fam,t){
 }
 
 // Patch 0.3: conservative animated silhouette bounds in model coordinates.
-const BOSS_TOP={proxima:250,corvus:270,cull:265,maw:230,thanos0:240,goblin:300,vulture:270,electro:270,sand:295,ock:260,mysterio:290,inheritor:180,ultron1:195,ultron2:195,ultron3:205,ultron4:215,other:165};
+const BOSS_TOP={thanosEnd:265,proxima:250,corvus:270,cull:265,maw:230,thanos0:240,goblin:300,vulture:270,electro:270,sand:295,ock:260,mysterio:290,inheritor:180,ultron1:195,ultron2:195,ultron3:205,ultron4:215,other:165};
 function bossModelScale(b,projectionScale){return projectionScale*3.1*(b.fam==='mysterio'?1.7:1);}
 function bossHudAnchor(b){
   const p=proj(b.x,0.5,14);
@@ -259,22 +259,23 @@ function bossHudAnchor(b){
 function infinityMotion(b){
  const pose={wind:0,strike:0,vis:''};
  if(!b||b.phase!=='fight'||typeof R==='undefined'||!R)return pose;
- const h=R.hazards.find(h=>h.fam===b.fam&&h.t>=h.tel-0.6&&h.t<h.tel+0.5);
+ const h=R.hazards.find(h=>h.fam===b.fam&&h.t>=h.tel-(h.vis==='snap'?3.2:.6)&&h.t<h.tel+0.5);
  if(!h)return pose;const d=h.t-h.tel;pose.vis=h.vis;
- if(d<0)pose.wind=Math.min(1,(d+0.6)/0.6);
+ if(d<0)pose.wind=Math.min(1,(d+(h.vis==='snap'?3.2:.6))/(h.vis==='snap'?3.2:.6));
  else {pose.wind=Math.max(0,1-d/0.13);pose.strike=d<0.13?d/0.13:Math.max(0,1-(d-0.13)/0.37);}
  return pose;
 }
 function drawInfinityBoss(fam,t,b){
  const motion=infinityMotion(b),wind=motion.wind,hit=motion.strike;
- const pro=fam==='proxima',cor=fam==='corvus',cull=fam==='cull',maw=fam==='maw',th=fam==='thanos0';
+ const end=fam==='thanosEnd',stage=end?(b.stones||endgameStage(b.name)||1):0;
+ const pro=fam==='proxima',cor=fam==='corvus',cull=fam==='cull',maw=fam==='maw',th=fam==='thanos0'||end;
  const skin=pro?'#afb7c7':cor?'#9eaaa3':cull?'#778064':maw?'#adbfc6':'#9b7db7';
- const armor=pro?'#7d8c9c':cor?'#46494b':cull?'#454953':maw?'#586674':'#414659';
+ const armor=end?'#ac8848':pro?'#7d8c9c':cor?'#46494b':cull?'#454953':maw?'#586674':'#414659';
  const gold=cor?'#9d9677':cull?'#aa7c50':'#c2a35f',light='#d3e0e4',deep='#202832';
  const poly=(p,c=armor,w=2)=>inkPath(()=>p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)),c,w);
  const line=(p,c=light,w=1.3)=>{ctx.beginPath();p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=c;ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();};
  const plate=(p,c=armor)=>{poly(p,c);line(p.slice(0,3),shade(c,.4));};
- const heavy=cull||th,sh=heavy?39:maw?20:25,hip=heavy?22:14,neck=-139,hy=heavy?-159:-158;
+ const heavy=cull||th,sh=end?44:heavy?39:maw?20:25,hip=heavy?22:14,neck=-139,hy=heavy?-159:-158;
  ctx.save();ctx.rotate(Math.sin(t*1.4)*.008+(hit*.035-wind*.018));ctx.translate(hit*3,wind*2);if(maw)ctx.translate(0,-10+Math.sin(t*1.5)*3);
  // Back layers: long fabric panels and swept hair have distinct silhouettes.
  if(cor){poly([[-24,-132],[-36,-82],[-43,-3],[-25,-13],[-19,5],[-5,-11],[10,1],[25,-11],[37,-4],[26,-124]],'#242a30');for(let i=-2;i<=2;i++)line([[i*9,-110],[i*13,-22]],'#44494b',2);}
@@ -307,6 +308,16 @@ function drawInfinityBoss(fam,t,b){
  if(maw){for(const side of[-1,1]){ctx.save();ctx.scale(side,1);plate([[7,-136],[19,-129],[22,-96],[26,-37],[11,-48],[5,-78]],'#8797a0');line([[11,-124],[13,-80],[19,-47]],'#c6d2d5',1.5);ctx.restore();}for(let i=0;i<7;i++)line([[-3,-129+i*7],[3,-129+i*7]],gold,2);}
  const armAngle=side=>{
    const idle=Math.sin(t*1.7+side)*.025;
+   if(end){
+     if(side<0)return idle+wind*.25-hit*.5;
+     const v=motion.vis;
+     if(v==='snap')return idle-.95-wind*.9+hit*.18;
+     if(v==='stone0'||v==='stone4')return idle-.95-wind*1.15+hit*1.6;
+     if(v==='stone1')return idle-.95+wind*.2-hit*.7;
+     if(v==='stone2')return idle-.95-wind*.4+hit*.9;
+     if(v==='stone3')return idle-.95+wind*.4-hit*.45;
+     return idle-.95-wind*.6+hit*.2;
+   }
    if(pro)return idle+(side>0?wind*.4-hit*.85:wind*.2-hit*.35);
    if(cor)return idle+(side<0?-wind*.35+hit*1.05:hit*.2);
    if(cull)return idle+(side>0?-wind*1.75+hit*.45:wind*.18);
@@ -325,6 +336,14 @@ function drawInfinityBoss(fam,t,b){
   if(!th||side<0)plate([[ex-w,ey+2],[ex+w,ey+1],[hx+w+1,handY-3],[hx-w-1,handY+2]],th?gold:armor);
   if(heavy){plate([[hx-w,handY-4],[hx+w,handY-6],[hx+w+1,handY+7],[hx-w+1,handY+10]],th&&side<0?gold:skin);for(let j=-1;j<=1;j++)line([[hx+j*5,handY],[hx+j*5,handY+6]],shade(skin,-.35),1.3);}
   else {blob(hx,handY,5,6,skin,1.5);for(let j=0;j<4;j++){const x=hx-5+j*3,sg=maw&&side>0?-1:1;line([[x,handY],[x+side*2,handY+sg*(8+j%2*3)],[x+side,handY+sg*(12+j%2*3)]],skin,2);}}
+  if(end&&side>0){
+    plate([[hx-14,handY-25],[hx+14,handY-25],[hx+17,handY+10],[hx-14,handY+12]],'#c4a15b');
+    line([[hx-9,handY-21],[hx-8,handY+6]],'#f0d591',2);
+    const sockets=[[-8,-15],[0,-17],[8,-15],[-10,-4],[10,-4],[0,3]];
+    sockets.forEach(([x,y],i)=>{blob(hx+x,handY+y, i===5?4.5:3.3,i===5?5.5:3.8,'#594624',1);if(i<stage){blob(hx+x,handY+y,i===5?3.5:2.5,i===5?4.5:3,ENDGAME_STONES[i].color,0);blob(hx+x-.7,handY+y-1,.8,1,'#fff',0);}});
+    const snap=motion.vis==='snap';
+    for(let j=0;j<4;j++){const x=hx-10+j*6;line([[x,handY+10],[x+(snap?j-1:0),handY+16],[x+(snap?5:0),handY+(snap?12:20)]],'#d6b570',3.4);}
+  }
   // Asymmetric shoulder shells, strongest on Cull's left.
   if(!maw){ctx.save();ctx.translate(sx,-128);ctx.scale(side,1);const ww=cull&&side<0?27:heavy?21:16;
    plate([[-8,-7],[6,-14],[ww,-9],[ww+3,3],[13,9],[-8,4]],pro&&side>0?gold:armor);
@@ -333,7 +352,7 @@ function drawInfinityBoss(fam,t,b){
   ctx.restore();
  }
  // Sculpted heads, brows, nose and jaw: no rounded hero head underneath.
- poly([[-7,-143],[-6,-129],[6,-129],[7,-143]],skin);
+ poly([[-(end?12:7),-143],[-(end?11:6),-129],[(end?11:6),-129],[(end?12:7),-143]],skin);
  // Patch 0.9: individual facial planes and expressions, including attack tension.
  const hw=cull?23:th?21:maw?12:14;
  const jaw=cull?17:th?16:maw?6:cor?7:8, chin=maw?22:cor?22:18;
@@ -359,6 +378,17 @@ function drawInfinityBoss(fam,t,b){
  if(cull){for(const side of[-1,1])plate([[side*13,hy-14],[side*19,hy-26],[side*23,hy-7],[side*15,hy+2]],'#5e684b');for(let j=0;j<3;j++)line([[-9+j*8,hy-18],[-5+j*7,hy-12]],'#adb396',2);}
  if(cor||pro){for(const side of[-1,1])plate([[side*10,hy-9],[side*16,hy-19],[side*20,hy-32],[side*23,hy-12],[side*14,hy+7]],cor?'#7e806b':'#363f4d');}
  if(maw){line([[-7,hy-18],[0,hy-21],[7,hy-18]],'#d5dfe1',2);line([[-9,hy+4],[-7,hy+12],[-3,hy+16]],'#6a7a85',1.5);}
+ if(end){
+   plate([[-23,hy-7],[-25,hy-24],[-15,hy-34],[0,hy-38],[16,hy-33],[25,hy-23],[22,hy-7],[15,hy-15],[8,hy-17],[0,hy-12],[-8,hy-17],[-16,hy-15]],'#b89652');
+   plate([[-6,hy-36],[5,hy-36],[9,hy-20],[0,hy-15],[-8,hy-21]],'#e0bd73');
+   for(const side of [-1,1]){plate([[side*22,hy-21],[side*26,hy-7],[side*20,hy+14],[side*15,hy+17],[side*18,hy-2]],'#99733d');line([[side*22,hy-15],[side*22,hy+2]],'#e3c57f',1.5);}
+   plate([[-19,-69],[-3,-64],[-4,-27],[-20,-32],[-25,-51]],'#3b3540');
+   plate([[3,-64],[19,-69],[25,-51],[20,-32],[4,-27]],'#3b3540');
+   line([[-15,-61],[-13,-34]],'#cba75e',2);line([[15,-61],[13,-34]],'#cba75e',2);
+   ctx.save();pivotArm(-1);line([[-59,-95],[-70,-50]],'#d2b26b',6);
+   plate([[-68,-60],[-99,-105],[-102,-123],[-72,-95],[-56,-56],[-27,-7],[-27,8],[-56,-22]],'#9b926f');
+   line([[-98,-115],[-70,-76],[-32,1]],'#dfc98d',2);ctx.restore();
+ }
  // Weapons and loose details are drawn last with finite geometry.
  if(pro){ctx.save();pivotArm(1);line([[-64,-158],[70,-65]],'#161d28',6);line([[-64,-158],[70,-65]],gold,3);plate([[-64,-158],[-90,-187],[-78,-157],[-57,-149]],'#71c4d5');line([[-85,-179],[-64,-158]],'#d5ffff',1.5);ctx.restore();}
  if(cor){ctx.save();pivotArm(-1);line([[-48,0],[-54,-172]],'#393a34',7);line([[-48,0],[-54,-172]],gold,3);plate([[-55,-158],[-70,-213],[-48,-188],[-43,-168]],'#a9ab8b');poly([[-57,-185],[-62,-204],[-51,-187]],'#e0dfbd',1);plate([[-51,-174],[-33,-163],[-28,-176],[-27,-156],[-41,-151]],'#929777');ctx.restore();}
@@ -466,7 +496,7 @@ function drawBossModel(b,s,t){
   ctx.save(); ctx.scale(s,s); ctx.translate(0,bob); const shieldPulse=Math.max(0,1-(t-(b.shieldHitAt??-99))/0.22); if(shieldPulse)ctx.translate(0,-3*Math.sin(shieldPulse*Math.PI)); if(flash){ctx.globalAlpha*=0.7;}
   const P=poseFor('idle',t*1.3,{override:{lArm:0.6,rArm:0.6,armsUp:0.3,lSpread:0.4,rSpread:0.4}}); P.face='front';
   switch(fam){
-    case 'proxima': case 'corvus': case 'cull': case 'maw': case 'thanos0': drawInfinityBoss(fam,t,b);break;
+    case 'thanosEnd': case 'proxima': case 'corvus': case 'cull': case 'maw': case 'thanos0': drawInfinityBoss(fam,t,b);break;
     case 'goblin': case 'vulture': case 'electro': case 'sand': case 'ock': case 'mysterio': drawClassicBoss(b,t,c1,c2);break;
     case 'inheritor': { drawHero(0,0,1.15,'#c02030','#1a1a26',P,{extra:({shY,headY})=>{ ctx.strokeStyle='#ffd23a'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-10,shY+4); ctx.lineTo(0,shY+30); ctx.lineTo(10,shY+4); ctx.stroke(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(-6,headY-2,4,6,0,0,7); ctx.ellipse(6,headY-2,4,6,0,0,7); ctx.fill(); inkPath(()=>{ctx.moveTo(-40,shY-4);ctx.lineTo(-16,shY-26);ctx.lineTo(16,shY-26);ctx.lineTo(40,shY-4);ctx.lineTo(30,shY+8);ctx.lineTo(-30,shY+8);},'#c02030',5); }}); break; }
     // ── 울트론 MK.1 : 시제기. 작고 웅크린 몸, 노출 배선, 외눈 ──
@@ -488,10 +518,27 @@ function drawBossModel(b,s,t){
 // --- 보스 패턴 정의 ---
 // hazard: {kind:'strike'|'low'|'high', lanes:[..], tel, dur, fam, t:0, vis}
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
-const FAM_IDX={proxima:13,corvus:14,cull:15,maw:16,thanos0:17,goblin:1,vulture:2,electro:3,sand:4,ock:5,mysterio:6,inheritor:7,ultron1:9,ultron2:10,ultron3:11,ultron4:12,other:8};
+const FAM_IDX={thanosEnd:18,proxima:13,corvus:14,cull:15,maw:16,thanos0:17,goblin:1,vulture:2,electro:3,sand:4,ock:5,mysterio:6,inheritor:7,ultron1:9,ultron2:10,ultron3:11,ultron4:12,other:8};
 let PR=Math.random; // 패턴용 RNG (보스 시작 시 시드 고정)
 function seedBossPattern(b){ b.rng=mulberry32((R.mode==='story'?R.issue:R.issue+10)*97+FAM_IDX[b.fam]*13+1); }
 const PATTERNS={
+ thanosEnd(b){
+   const n=Math.max(1,Math.min(6,b.stones||endgameStage(b.name)||1));
+   b.casts=b.casts||0;
+   if(n===6&&!b.snapUsed&&(b.hp<=b.max*.5||b.casts>=6)){
+     b.snapUsed=true;const safe=Math.floor(PR()*3);
+     return [{kind:'strike',lanes:[0,1,2].filter(l=>l!==safe),tel:3.2,minTel:3.2,dur:.4,vis:'snap',safe,label:'핑거 스냅 · SAFE로 이동',damage:99}];
+   }
+   // Newest stone first, then every acquired stone; no unlocked skill is starved by RNG.
+   const stone=(n-1-(b.casts++%n)+n)%n,l=Math.floor(PR()*3);
+   const h=(kind,lanes,tel,extra={})=>({kind,lanes,tel,dur:.3,vis:'stone'+stone,stone,label:ENDGAME_STONES[stone].skill,...extra});
+   if(stone===0)return [h('low',[0,1,2],1.45)];
+   if(stone===1)return [h('strike',[l],1.4),h('strike',[(l+1)%3],2.6),h('strike',[(l+2)%3],3.8)];
+   if(stone===2)return [h('high',[0,1,2],1.5),h('low',[0,1,2],2.8)];
+   if(stone===3){const target=R.lane;return [h('strike',[target],1.65),h('strike',[(target+1)%3],3),h('strike',[target],4.35)];}
+   if(stone===4)return [h('low',[0,1,2],1.5),h('low',[0,1,2],3.3,{reverse:true})];
+   return [h('high',[0,1,2],1.6,{dur:.38})];
+ },
  proxima(){const l=Math.floor(PR()*3);return [{kind:'strike',lanes:[l],tel:1.15,dur:.3,vis:'spear'},{kind:'low',lanes:[0,1,2],tel:2.1,dur:.25,vis:'spear'}];},
  corvus(){const l=Math.floor(PR()*3);return [{kind:'strike',lanes:[l],tel:1.05,dur:.3,vis:'glaive'},{kind:'strike',lanes:[(l+1)%3],tel:1.95,dur:.3,vis:'glaive'},{kind:'high',lanes:[0,1,2],tel:2.9,dur:.25,vis:'glaive'}];},
  cull(){return [{kind:'strike',lanes:[Math.floor(PR()*3)],tel:1.3,dur:.4,vis:'hammer'},{kind:'low',lanes:[0,1,2],tel:2.4,dur:.3,vis:'groundwave'}];},
@@ -532,7 +579,7 @@ const PATTERNS={
   other(b){ return [{kind:'strike',lanes:[Math.floor(PR()*3)],tel:1.1,dur:0.5,vis:'debris'}]; },
 };
 // Finish each attack before scheduling another; particles may continue fading.
-const isInfinityBoss=b=>!!b&&['proxima','corvus','cull','maw','thanos0'].includes(b.fam);
+const isInfinityBoss=b=>!!b&&['proxima','corvus','cull','maw','thanos0','thanosEnd'].includes(b.fam);
 const isUltronBoss=b=>!!b&&/^ultron[1-4]$/.test(b.fam);
 function bossPatternBusy(b){
   return R.hazards.some(h=>h.t<h.tel+h.dur+0.4)||
@@ -554,7 +601,7 @@ function bossPattern(b){
     h.tel*=(b.telK||1)*R.mods.telMul;h.telAdj=true;
     if(isUltronBoss(b)||isInfinityBoss(b)){
       // Apply recovery AFTER difficulty modifiers. Allow landing / a full slide.
-      h.tel=Math.max(h.tel,previousEnd?previousEnd+0.45:0.9);
+      h.tel=Math.max(h.tel,h.minTel||0,previousEnd?previousEnd+(b.fam==='thanosEnd'?.65:.45):.9);
       previousEnd=h.tel+h.dur;
     }
     R.hazards.push(h);
@@ -570,7 +617,7 @@ function updateHazards(dt){
     if(inWin&&!h.done&&h.lanes.includes(R.lane)&&Math.abs(R.px-(R.lane-1))<0.5){
       const evade=h.kind==='low'?(R.state==='jump'&&R.py>0.25):h.kind==='high'?R.state==='slide':false;
       if(evade){ h.done=true; if(!h.evaded){h.evaded=true;addCombo(1);R.msg='NICE DODGE';R.msgT=0.6;} }
-      else if(h.t>=h.tel){ h.done=true; if(h.soft)softHit(); else hitPlayer(); } }
+      else if(h.t>=h.tel){ h.done=true; if(h.soft)softHit(); else hitPlayer(h.damage||1); } }
     if(h.t>=h.tel&&!h.sfx){h.sfx=true;SFX.play(h.kind==='strike'?'bomb':'whoosh');R.shake=Math.max(R.shake,0.25);} }
   R.hazards=R.hazards.filter(h=>h.t<h.tel+h.dur+0.4);
 }
@@ -582,7 +629,10 @@ function hazardWarning(h){
  return {fill:`rgba(${r},${g},${b},${alpha})`,edge:`rgb(${r},${g},${b})`};
 }
 function drawHazards(){
+  const activeLabel=R.hazards.find(h=>h.label&&h.t<h.tel+h.dur);
+  if(activeLabel){ctx.save();ctx.fillStyle='#121521dd';ctx.fillRect(W*.15,H*.18,W*.7,48);ctx.fillStyle=activeLabel.vis==='snap'?'#ffe5a1':ENDGAME_STONES[activeLabel.stone].color;ctx.textAlign='center';ctx.font=`900 ${Math.min(24,W/28)}px sans-serif`;ctx.fillText(activeLabel.label,W/2,H*.18+31);ctx.restore();}
   for(const h of R.hazards){ const k=h.t/h.tel; const act=h.t>=h.tel; const fade=act?Math.max(0,1-(h.t-h.tel)/(h.dur+0.4)):1;
+    if(h.vis==='snap'&&!act){const p=proj(h.safe-1,0,4);ctx.save();ctx.fillStyle='#4eeac8';ctx.font='900 30px sans-serif';ctx.textAlign='center';ctx.fillText('SAFE',p.x,p.y-70*p.s);ctx.strokeStyle='#4eeac8';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(p.x,p.y,55*p.s,18*p.s,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
     for(const l of h.lanes){ const lx=l-1;
       if(!act){ // 텔레그래프: 바닥 스트라이프 + 깜빡임
         const a=proj(lx-0.45,0,1.5),b=proj(lx+0.45,0,1.5),c=proj(lx+0.45,0,9),d=proj(lx-0.45,0,9); const warning=hazardWarning(h); ctx.fillStyle=warning.fill; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill(); ctx.strokeStyle=warning.edge; ctx.lineWidth=4; ctx.setLineDash([12,8]); ctx.stroke(); ctx.setLineDash([]);
@@ -594,6 +644,17 @@ function drawHazards(){
       } else { // 발동 비주얼
         ctx.globalAlpha=fade; const p=proj(lx,0,4); ctx.save(); ctx.translate(p.x,p.y); ctx.scale(p.s,p.s);
         switch(h.vis){
+          case 'stone0':case 'stone1':case 'stone2':case 'stone3':case 'stone4':case 'stone5':case 'snap':{
+            const stone=h.stone??5,col=ENDGAME_STONES[stone].color,age=Math.min(1,(h.t-h.tel)/Math.max(.01,h.dur));
+            ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=7;
+            if(h.vis==='snap'){for(let i=0;i<6;i++){ctx.strokeStyle=ENDGAME_STONES[i].color;ctx.beginPath();ctx.ellipse(0,-60,35+age*150+i*8,18+age*45+i*4,0,0,Math.PI*2);ctx.stroke();}}
+            else if(stone===1){ctx.beginPath();ctx.ellipse(0,-70,42,80,0,0,Math.PI*2);ctx.stroke();ctx.fillRect(-16,-120+age*80,32,60);}
+            else if(stone===2){for(let i=0;i<5;i++){ctx.save();ctx.translate(-70+i*35,h.kind==='high'?-150:-15);ctx.rotate(age*1.4);ctx.fillRect(-12,-12,24,24);ctx.restore();}}
+            else if(stone===3){for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse((i-1)*28,-80+age*60,10,35,0,0,Math.PI*2);ctx.stroke();}}
+            else if(stone===5){ctx.globalAlpha=fade*.7;ctx.fillRect(-110,-185,220,40);ctx.fillStyle='#fff5be';ctx.fillRect(-110,-170,220,10);}
+            else{const r=35+(h.reverse?1-age:age)*130;ctx.beginPath();ctx.ellipse(0,-8,r,20,0,0,Math.PI*2);ctx.stroke();if(stone===4){ctx.beginPath();ctx.moveTo(0,-8);ctx.lineTo(Math.cos(age*6)*r,-8+Math.sin(age*6)*20);ctx.stroke();}}
+            break;
+          }
           case 'spear':case 'glaive':{const yy=h.kind==='low'?-12:-150;ctx.strokeStyle=h.vis==='spear'?'#7fd8df':'#c1ad76';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(-85,yy-20);ctx.lineTo(85,yy+20);ctx.stroke();inkPath(()=>{ctx.moveTo(85,yy+20);ctx.lineTo(112,yy+9);ctx.lineTo(101,yy+35);},'#e1d8b1',3);break;}
           case 'hammer':case 'gauntlet':{const yy=-110+Math.min(1,(h.t-h.tel)/.2)*80;ctx.fillStyle=h.vis==='hammer'?'#626878':'#b8a060';ctx.strokeStyle=INK;ctx.lineWidth=5;ctx.beginPath();ctx.roundRect(-42,yy,84,58,9);ctx.fill();ctx.stroke();break;}
           case 'groundwave':{ctx.strokeStyle='#d4b58d';ctx.lineWidth=7;ctx.beginPath();ctx.ellipse(0,h.kind==='high'?-160:-8,45+(1-fade)*150,18,0,0,7);ctx.stroke();break;}
@@ -629,6 +690,11 @@ function drawEnv(issue,off,seg){
   const col=ISSUE_ENV_COLORS[issue]; const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,col[0]); g.addColorStop(0.45,col[1]); g.addColorStop(1,'#05070f'); ctx.fillStyle=g; ctx.fillRect(-10,-10,W+20,H+20);
   const par=(k,fn)=>{ const span=W+300; for(let i=0;i<14;i++){ const x=((i*211-off*k)%span+span)%span-150; fn(x,i); } };
   switch(issue){
+    case 8:{
+      ctx.fillStyle='#f1c88b';ctx.beginPath();ctx.arc(W*.72,HOR-145,65,0,Math.PI*2);ctx.fill();
+      par(.12,(x,i)=>{const h=70+i*31%140;ctx.fillStyle='#45353d';ctx.beginPath();ctx.moveTo(x,HOR+10);ctx.lineTo(x+25,HOR-h);ctx.lineTo(x+55,HOR-h+38);ctx.lineTo(x+120,HOR+10);ctx.closePath();ctx.fill();});
+      par(.3,(x,i)=>{ctx.fillStyle='#332c36';ctx.fillRect(x,HOR-35,74,45);ctx.save();ctx.translate(x+20,HOR-30);ctx.rotate(i%2?.4:-.3);ctx.fillRect(0,-65,12,85);ctx.restore();});break;
+    }
     case 7:{ // 외계 침공: 거대 링과 기울어진 첨탑
       const sky=ctx.createLinearGradient(0,0,0,HOR);sky.addColorStop(0,'#20152f');sky.addColorStop(1,'#705365');ctx.fillStyle=sky;ctx.fillRect(0,0,W,HOR);
       ctx.strokeStyle='#332738';ctx.lineWidth=34;ctx.beginPath();ctx.ellipse(W*.72,HOR-145,105,155,-.3,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#bd9565';ctx.lineWidth=5;ctx.stroke();
@@ -692,8 +758,8 @@ function drawEnv(issue,off,seg){
 // --- 지면/협곡 구간 렌더 (z 범위) ---
 function drawGroundRange(type,z0,z1,col){
   const q=(xl,xr,zz0,zz1,fill)=>{ const a=proj(xl,0,zz0),b=proj(xr,0,zz0),c=proj(xr,0,zz1),d=proj(xl,0,zz1); ctx.fillStyle=fill; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill(); };
-  if(type==='swing'&&(R.issue===6||R.issue===7)){
-    const alien=R.issue===7;
+  if(type==='swing'&&(R.issue===6||R.issue===7||R.issue===8)){
+    const alien=R.issue>=7;
     const poly=(points,fill,stroke)=>{ctx.beginPath();points.forEach(([x,y,z],i)=>{const p=proj(x,y,z);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}};
     q(-1.9,1.9,z0,z1,alien?'#24102e':'#07151d');
     for(let z=Math.ceil(z0/4)*4;z<z1;z+=4){const end=Math.min(z+2,z1);q(-1.7,1.7,z,end,alien?'#582841':'#142c36');if(alien){q(-.45,.15,z,end,'#d88b4155');}else{q(-1.8,-1.65,z,end,'#42bdd6');q(1.65,1.8,z,end,'#42bdd6');}}
@@ -731,8 +797,8 @@ function drawGroundRange(type,z0,z1,col){
     for(let zz=Math.ceil(z0/9)*9;zz<z1;zz+=9){ const p1=proj(-1.9,3.6,zz),p2=proj(1.9,3.6,zz); ctx.strokeStyle='#000'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.quadraticCurveTo((p1.x+p2.x)/2,p1.y+40*p1.s,p2.x,p2.y); ctx.stroke(); }
     return;
   }
-  if((type==='run'||type==='boss')&&(R.issue===6||R.issue===7)){
-    const alien=R.issue===7,travel=(R.dist/2.2)%6;
+  if((type==='run'||type==='boss')&&(R.issue===6||R.issue===7||R.issue===8)){
+    const alien=R.issue>=7,travel=(R.dist/2.2)%6;
     const poly=(pts,fill,stroke)=>{ctx.beginPath();pts.forEach(([x,y,z],i)=>{const p=proj(x,y,z);i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke();}};
     q(-1.7,1.7,z0,z1,alien?'#332538':'#26363d');
     for(let z=-travel;z<z1;z+=6){const lo=Math.max(z0,z),hi=Math.min(z1,z+5.75);if(hi<=lo)continue;

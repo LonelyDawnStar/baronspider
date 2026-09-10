@@ -102,12 +102,13 @@ const ISSUES = [
   gimmick:'보스마다 형태와 기술이 전부 다르고, 뒤로 갈수록 강해진다 — 잡몹은 울트론 센트리 군단',
   intro:'울트론이 도시의 모든 기계를 장악했다. 센트리 군단이 하늘을 메우고, 네 기의 울트론이 차례로 앞을 막는다. 하나를 쓰러뜨릴 때마다 다음은 더 강해져 있다.'},
  {n:8,title:'인피니티 워',env:'침공당한 뉴욕 · Q-쉽',need:70,bosses:['프록시마 미드나이트','콜버스 글레이브','컬 옵시디언','에보니 모','타노스(미완)'],gimmick:'블랙 오더와 스톤 없는 타노스. 예고를 피하고 쉴드를 웹 공격하라.',intro:'도시 상공에 Q-쉽이 나타났다. 네 명의 침략자를 돌파하면 인피니티 스톤을 갖기 전의 타노스가 기다린다.'},
+ {n:9,title:'엔드게임',env:'황혼의 최종 전장',need:80,bosses:['타노스 · 파워','타노스 · 스페이스','타노스 · 리얼리티','타노스 · 소울','타노스 · 타임','타노스 · 마인드'],gimmick:'6번의 전투마다 스톤과 기술이 누적된다. 최종전에서는 한 번의 핑거 스냅 — 안전 차선으로!',intro:'파워부터 마인드까지. 타노스는 전투를 거듭하며 여섯 스톤을 완성한다. 이전 스톤의 기술도 다시 사용하므로 예고를 읽고 대응하라.'},
 ];
 const EVENT_BOSSES = ['잭 오랜턴','하이드로맨','데모고블린','실버 세이블','칸','몰런','데이모스','제닉스','솔루스','타노스'];
 const ISSUE_ENV_COLORS = [
  ['#0b1226','#1c2a55','#d8262c'],['#0a1a2e','#1f4a6e','#2fd3e6'],['#0f0f24','#3a2a7a','#ffd23d'],
  ['#241a0f','#6e4a1f','#f2b33d'],['#141414','#3a3a4a','#4fc47a'],['#1a0f24','#4a1f6e','#b26df0'],
- ['#0a0d14','#2a3446','#8ea6c4'],['#171625','#594153','#dda45c']];
+ ['#0a0d14','#2a3446','#8ea6c4'],['#171625','#594153','#dda45c'],['#241b30','#9d6658','#e7b968']];
 const MISSION_TYPES = [
  {t:'dist',label:m=>`${m}m 달리기`},
  {t:'vials',label:m=>`바이알 ${m}개 수집`},
@@ -161,3 +162,14 @@ const CHAR_AB={classic:'combo',mangaverse:'speed',bagman:'lucky',battledmg:'revi
  nickfury:'bomb',blackcat:'lucky',mj:'xp',ironspider_mcu:'iron',venom:'venom',spiderzombie:'sturdy',manspider:'killer',spiderhulk:'sturdy',
  titan_cosmic:'uni',titan_spiderverse:'clones',titan_superior:'tentacle'};
 const abilityOf=c=>ABILITIES[CHAR_AB[c.id]||GROUP_AB[c.g]||'combo'];
+
+// 0.15: stable order also drives model sockets, skill unlocks and replay stages.
+const ENDGAME_STONES=[
+ {name:'파워',color:'#b879fa',skill:'파워 · 대지 분쇄'},
+ {name:'스페이스',color:'#55aeff',skill:'스페이스 · 포털 연격'},
+ {name:'리얼리티',color:'#f15c69',skill:'리얼리티 · 변형 장벽'},
+ {name:'소울',color:'#f5a24d',skill:'소울 · 영혼 추적'},
+ {name:'타임',color:'#67de9b',skill:'타임 · 역행 파동'},
+ {name:'마인드',color:'#ffe078',skill:'마인드 · 정신 광선'}
+];
+function endgameStage(name){const i=ENDGAME_STONES.findIndex(s=>name==='타노스 · '+s.name);return i<0?0:i+1;}
