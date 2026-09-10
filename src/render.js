@@ -246,7 +246,7 @@ function drawUltronRevision(fam,t){
 }
 
 // Patch 0.3: conservative animated silhouette bounds in model coordinates.
-const BOSS_TOP={proxima:220,corvus:240,cull:225,maw:200,thanos0:210,goblin:185,vulture:215,electro:210,sand:180,ock:180,mysterio:165,inheritor:180,ultron1:195,ultron2:195,ultron3:205,ultron4:215,other:165};
+const BOSS_TOP={proxima:215,corvus:225,cull:205,maw:210,thanos0:200,goblin:185,vulture:215,electro:210,sand:180,ock:180,mysterio:165,inheritor:180,ultron1:195,ultron2:195,ultron3:205,ultron4:215,other:165};
 function bossModelScale(b,projectionScale){return projectionScale*3.1*(b.fam==='mysterio'?1.7:1);}
 function bossHudAnchor(b){
   const p=proj(b.x,0.5,14);
@@ -254,45 +254,80 @@ function bossHudAnchor(b){
   return {x:p.x,y:p.y-(BOSS_TOP[b.fam]||BOSS_TOP.other)*bossModelScale(b,p.s)-54};
 }
 // Issue 8: original Canvas silhouettes; no imported picture assets.
+// Patch 0.7: articulated, individually proportioned figures; flat layered geometry only.
 function drawInfinityBoss(fam,t){
- const c={proxima:['#adb9c5','#252936'],corvus:['#a3a49b','#252629'],cull:['#737d56','#383940'],maw:['#b1bec5','#343b47'],thanos0:['#9475b4','#303344']}[fam];
- const heavy=fam==='cull'||fam==='thanos0',gold=fam==='cull'?'#8c6142':'#b8a060';
- const plate=(pts,col)=>inkPath(()=>pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)),col,3);
- const line=(pts,col,w)=>{ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap='round';ctx.stroke();};
- ctx.save();ctx.scale(heavy?1.6:1.08,heavy?1.35:1.12);
- if(fam==='maw')ctx.translate(0,-12+Math.sin(t*2)*3);
- if(fam==='corvus'||fam==='maw')plate([[-21,-105],[-32,0],[0,-12],[33,0],[22,-105]],fam==='corvus'?'#171c26':'#707f8b');
- if(fam==='proxima')plate([[-12,-132],[10,-140],[24,-121],[41,-111],[15,-111],[-18,-116]],'#292934');
- const P=poseFor('idle',t,{override:{lArm:.3,rArm:.65,armsUp:.12,lSpread:.55,rSpread:.55}});P.face='front';
- drawHero(0,0,1,c[0],c[1],P,{extra:({headY,shY})=>{
-  plate([[-18,shY-5],[0,shY+3],[18,shY-5],[14,shY+32],[0,shY+40],[-14,shY+32]],c[1]);
-  line([[-17,shY-4],[0,shY+8],[17,shY-4]],gold,4);
-  if(heavy){for(const side of[-1,1]){blob(side*24,shY,14,11,c[1],3);line([[side*16,shY-6],[side*29,shY-3]],gold,3);}blob(0,headY,18,19,c[0],3);}
-  else blob(0,headY,12,19,c[0],3);
-  ctx.fillStyle=fam==='cull'?'#dcc976':'#f0e6da';ctx.fillRect(-9,headY-3,6,2);ctx.fillRect(3,headY-3,6,2);
-  line([[-5,headY+9],[5,headY+9]],'#30303a',2);
-  if(fam==='thanos0'){
-   for(let x=-9;x<=9;x+=4)line([[x,headY+12],[x,headY+17]],'#57416c',1.4);
-   plate([[-16,shY+1],[-6,shY+7],[-8,shY+20],[-17,shY+13]],gold);
-   plate([[16,shY+1],[6,shY+7],[8,shY+20],[17,shY+13]],gold);
-   // Plain gauntlet: no stones, sockets, beams or snap.
-   blob(44,-70,10,11,gold,3);for(let i=0;i<3;i++)line([[38+i*4,-75],[38+i*4,-69]],'#6b5835',1.5);
-  }
-  if(fam==='cull'){for(const side of[-1,1])plate([[side*11,headY-12],[side*20,headY-26],[side*18,headY-5]],'#5b6549');line([[-10,headY+7],[0,headY+11],[10,headY+7]],'#293021',3);}
-  if(fam==='maw'){line([[0,headY-2],[-2,headY+5],[3,headY+5]],'#788790',2);for(let i=0;i<5;i++)line([[-4,shY+i*6],[4,shY+i*6]],gold,2);}
-  if(fam==='corvus'||fam==='proxima')for(const side of[-1,1])plate([[side*10,headY-6],[side*20,headY-28],[side*15,headY-1]],fam==='corvus'?gold:'#454652');
- }});
- if(fam==='proxima'){
-  line([[-62,-150],[66,-58]],'#141923',7);line([[-62,-150],[66,-58]],gold,3);
-  plate([[-62,-150],[-88,-181],[-76,-154],[-57,-140]],'#79d5e3');
- }else if(fam==='corvus'){
-  line([[-44,0],[-52,-162]],gold,5);plate([[-52,-151],[-65,-199],[-43,-169],[-40,-150]],'#b2a777');
-  plate([[-50,-164],[-34,-154],[-28,-167],[-32,-143],[-48,-146]],gold);
- }else if(fam==='cull'){
-  line([[37,-77],[62,-31]],'#7a6a53',6);plate([[47,-50],[71,-61],[84,-39],[58,-24]],'#43454e');line([[55,-47],[71,-51]],'#a4a7ac',3);
- }else if(fam==='maw'){
-  for(let i=0;i<4;i++){const x=(i<2?-1:1)*(46+i%2*13),y=-80-i%2*45+Math.sin(t*1.5+i)*7;ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(t+i)*.2);plate([[-7,-8],[6,-10],[10,4],[-4,9]],'#6c7683');ctx.restore();}
+ const pro=fam==='proxima',cor=fam==='corvus',cull=fam==='cull',maw=fam==='maw',th=fam==='thanos0';
+ const skin=pro?'#afb7c7':cor?'#9eaaa3':cull?'#778064':maw?'#adbfc6':'#9b7db7';
+ const armor=pro?'#7d8c9c':cor?'#46494b':cull?'#454953':maw?'#586674':'#414659';
+ const gold=cor?'#9d9677':cull?'#aa7c50':'#c2a35f',light='#d3e0e4',deep='#202832';
+ const poly=(p,c=armor,w=2)=>inkPath(()=>p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)),c,w);
+ const line=(p,c=light,w=1.3)=>{ctx.beginPath();p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=c;ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();};
+ const plate=(p,c=armor)=>{poly(p,c);line(p.slice(0,3),shade(c,.4));};
+ const heavy=cull||th,sh=heavy?39:maw?20:25,hip=heavy?22:14,neck=-139,hy=heavy?-159:-158;
+ ctx.save();if(maw)ctx.translate(0,-10+Math.sin(t*1.5)*3);
+ // Back layers: long fabric panels and swept hair have distinct silhouettes.
+ if(cor){poly([[-24,-132],[-36,-82],[-43,-3],[-25,-13],[-19,5],[-5,-11],[10,1],[25,-11],[37,-4],[26,-124]],'#242a30');for(let i=-2;i<=2;i++)line([[i*9,-110],[i*13,-22]],'#44494b',2);}
+ if(maw){poly([[-23,-125],[-29,-45],[-23,-10],[-4,-29],[0,-80],[6,-25],[27,-8],[29,-49],[20,-125]],'#37424d');}
+ if(pro){poly([[-15,-169],[9,-176],[20,-157],[40,-145],[58,-130],[37,-133],[46,-123],[21,-130],[-8,-145]],'#292d3c');for(let i=0;i<4;i++)line([[7,-162+i*5],[23,-146+i*3],[40+i*2,-134+i*3]],'#596173');}
+ // Two-segment legs: muscle / trouser base, knee guard, layered greaves and boots.
+ for(const side of[-1,1]){const k=side*(heavy?29:19),foot=side*(heavy?35:23),h=side*hip,w=heavy?13:8;
+  poly([[h-w,-74],[h+w,-74],[k+w,-40],[k+w-2,-32],[k-w,-34]],deep);
+  plate([[h-w+2,-72],[h+w-1,-73],[k+w-2,-47],[k,-40],[k-w+2,-48]],maw?'#39434c':armor);
+  blob(k,-37,w-2,7,deep,2);plate([[k-w+1,-41],[k+2,-45],[k+w,-39],[k+4,-31],[k-w+2,-33]],heavy?gold:armor);
+  poly([[k-w+2,-30],[k+w-1,-30],[foot+w-2,-7],[foot-w,-7]],deep);
+  plate([[k-w+3,-29],[k+w-2,-28],[foot+w-4,-9],[foot-w+2,-7]],pro&&side<0?gold:armor);
+  line([[k,-26],[foot,-11]],heavy?gold:light,1.6);
+  plate([[foot-w,-9],[foot+w-2,-10],[foot+w+8,-2],[foot+w+9,3],[foot-w-4,3]],'#303946');
+  if(heavy)for(let j=0;j<2;j++)line([[k-w+3,-24+j*7],[k+w-2,-22+j*7]],'#8994a0',1.3);
  }
+ // Waist and torso have independent widths and layered plates.
+ poly([[-hip,-78],[hip,-78],[hip+3,-64],[0,-58],[-hip-3,-64]],deep);
+ plate([[-hip,-78],[0,-82],[hip,-78],[hip-2,-70],[0,-67],[-hip+2,-70]],gold);
+ poly([[-sh,-128],[-14,-140],[14,-140],[sh,-128],[hip,-79],[-hip,-79]],deep);
+ for(let i=0;i<3;i++){let w=(heavy?25:16)-i*2,y=-105+i*10;plate([[-w,y],[0,y+3],[w,y],[w-2,y+9],[0,y+12],[-w+2,y+9]],cor?'#535550':armor);}
+ for(const side of[-1,1]){ctx.save();ctx.scale(side,1);
+  plate([[2,-135],[sh-7,-135],[sh,-121],[sh-6,-106],[12,-105],[3,-113]],armor);
+  line([[5,-130],[sh-9,-131],[sh-3,-122]],gold,heavy?3:2);
+  if(cor)for(let j=0;j<4;j++)line([[5,-127+j*6],[sh-5,-131+j*7]],'#979a8b',2);
+  if(pro){poly([[6,-127],[16,-128],[21,-119],[12,-113],[6,-116]],'#b6c4cc',1);}
+  if(th)plate([[3,-139],[18,-140],[29,-130],[20,-125],[7,-132]],gold);
+  ctx.restore();
+ }
+ if(maw){for(const side of[-1,1]){ctx.save();ctx.scale(side,1);plate([[7,-136],[19,-129],[22,-96],[26,-37],[11,-48],[5,-78]],'#8797a0');line([[11,-124],[13,-80],[19,-47]],'#c6d2d5',1.5);ctx.restore();}for(let i=0;i<7;i++)line([[-3,-129+i*7],[3,-129+i*7]],gold,2);}
+ // Arms: angled upper arm, forearm, cuff and individually drawn fingers.
+ for(const side of[-1,1]){let sx=side*sh,ex=side*(heavy?54:37),ey=maw&&side>0?-128:-105,hx=side*(heavy?60:44),handY=maw&&side>0?-151:-81,w=heavy?12:7;
+  poly([[sx-w,-128],[sx+w,-125],[ex+w,ey],[ex-w,ey+5]],heavy?skin:deep);
+  if(!th)plate([[sx-w,-128],[sx+w,-126],[ex+w-2,ey-3],[ex-w+2,ey]],armor);
+  if(heavy){line([[sx+side*3,-118],[ex+side*4,ey-4]],shade(skin,.25),2);}
+  blob(ex,ey,heavy?9:5,heavy?8:5,skin,2);
+  poly([[ex-w+1,ey],[ex+w-1,ey],[hx+w,handY-3],[hx-w,handY+2]],skin);
+  if(!th||side<0)plate([[ex-w,ey+2],[ex+w,ey+1],[hx+w+1,handY-3],[hx-w-1,handY+2]],th?gold:armor);
+  if(heavy){plate([[hx-w,handY-4],[hx+w,handY-6],[hx+w+1,handY+7],[hx-w+1,handY+10]],th&&side<0?gold:skin);for(let j=-1;j<=1;j++)line([[hx+j*5,handY],[hx+j*5,handY+6]],shade(skin,-.35),1.3);}
+  else {blob(hx,handY,5,6,skin,1.5);for(let j=0;j<4;j++){const x=hx-5+j*3,sg=maw&&side>0?-1:1;line([[x,handY],[x+side*2,handY+sg*(8+j%2*3)],[x+side,handY+sg*(12+j%2*3)]],skin,2);}}
+  // Asymmetric shoulder shells, strongest on Cull's left.
+  if(!maw){ctx.save();ctx.translate(sx,-128);ctx.scale(side,1);const ww=cull&&side<0?27:heavy?21:16;
+   plate([[-8,-7],[6,-14],[ww,-9],[ww+3,3],[13,9],[-8,4]],pro&&side>0?gold:armor);
+   line([[-3,-8],[7,-10],[ww-3,-5]],heavy?gold:light,2);
+   if(cull&&side<0)for(let j=0;j<2;j++)plate([[3,6+j*6],[22,3+j*6],[23,10+j*6],[6,13+j*6]],'#424651');ctx.restore();}
+ }
+ // Sculpted heads, brows, nose and jaw: no rounded hero head underneath.
+ poly([[-7,-143],[-6,-129],[6,-129],[7,-143]],skin);
+ const hw=heavy?20:maw?12:14;
+ plate([[-hw,hy-8],[-hw+4,hy-22],[-5,hy-27],[8,hy-25],[hw,hy-15],[hw,hy+4],[hw-7,hy+16],[0,hy+20],[-hw+5,hy+12]],skin);
+ poly([[2,hy-24],[hw-2,hy-14],[hw-1,hy+3],[hw-8,hy+15],[3,hy+18],[7,hy+1]],shade(skin,-.21),0);
+ line([[-hw+4,hy-5],[-5,hy-7],[-3,hy-3]],shade(skin,-.5),2.5);line([[3,hy-3],[6,hy-7],[hw-3,hy-5]],shade(skin,-.5),2.5);
+ line([[-hw+5,hy-2],[-6,hy-1]],cull?'#e9d67a':'#e4e8dc',1.7);line([[6,hy-1],[hw-4,hy-2]],cull?'#e9d67a':'#e4e8dc',1.7);
+ line([[0,hy-4],[-2,hy+5],[3,hy+6]],shade(skin,-.4),1.6);
+ line([[-6,hy+10],[1,hy+11],[7,hy+9]],shade(skin,-.5),1.7);
+ if(th){for(let x=-11;x<=11;x+=4)line([[x,hy+13],[x*.8,hy+18]],'#5f4679',1.2);line([[-12,hy-17],[0,hy-19],[12,hy-16]],'#b99bd0',1.5);}
+ if(cull){for(const side of[-1,1])plate([[side*13,hy-14],[side*19,hy-26],[side*23,hy-7],[side*15,hy+2]],'#5e684b');for(let j=0;j<3;j++)line([[-9+j*8,hy-18],[-5+j*7,hy-12]],'#adb396',2);}
+ if(cor||pro){for(const side of[-1,1])plate([[side*10,hy-9],[side*16,hy-19],[side*20,hy-32],[side*23,hy-12],[side*14,hy+7]],cor?'#7e806b':'#363f4d');}
+ if(maw){line([[-7,hy-18],[0,hy-21],[7,hy-18]],'#d5dfe1',2);line([[-9,hy+4],[-7,hy+12],[-3,hy+16]],'#6a7a85',1.5);}
+ // Weapons and loose details are drawn last with finite geometry.
+ if(pro){line([[-64,-158],[70,-65]],'#161d28',6);line([[-64,-158],[70,-65]],gold,3);plate([[-64,-158],[-90,-187],[-78,-157],[-57,-149]],'#71c4d5');line([[-85,-179],[-64,-158]],'#d5ffff',1.5);}
+ if(cor){line([[-48,0],[-54,-172]],'#393a34',7);line([[-48,0],[-54,-172]],gold,3);plate([[-55,-158],[-70,-213],[-48,-188],[-43,-168]],'#a9ab8b');poly([[-57,-185],[-62,-204],[-51,-187]],'#e0dfbd',1);plate([[-51,-174],[-33,-163],[-28,-176],[-27,-156],[-41,-151]],'#929777');}
+ if(cull){line([[58,-80],[77,-29]],gold,7);plate([[57,-49],[82,-63],[98,-39],[72,-21]],'#454c58');plate([[60,-49],[81,-59],[86,-49],[66,-39]],'#7c8691');line([[73,-48],[87,-38]],'#bdc7c7',2);}
+ if(maw)for(let i=0;i<4;i++){const x=(i<2?-1:1)*(48+i%2*11),y=-88-i%2*47+Math.sin(t*1.6+i)*5;ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(t+i)*.15);plate([[-7,-9],[6,-12],[11,3],[-3,10]],'#687887');poly([[1,-10],[6,-11],[10,3],[3,7]],'#475462',0);ctx.restore();}
  ctx.restore();
 }
 
