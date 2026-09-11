@@ -383,21 +383,29 @@ function nextSeg(){ // 경계 통과 시 호출 — 순간이동 없이 지형�
   if(R.seg==='swing'){R.py=Math.max(R.py,0.9);R.vy=3.5;SFX.play('web');} else if(R.seg==='fall'){R.py=0;R.vy=0;} else if(prev==='swing'||prev==='fall'){R.py=0;R.vy=0;R.landT=0.2;R.state='run';for(let i=0;i<8;i++)R.parts.push({x:proj(R.px,0,0).x+rnd(-40,40),y:proj(0,0,0).y+rnd(-4,4),t:0.4,c:'#c9d1e3',dust:true,vx:rnd(-80,80)});} else {R.state='run';}
   setHint({run:'옥상 달리기',swing:'스윙 — 길게 눌러 상승',wall:'벽 타기 — 좌우로 창문 회피',fall:'자유 낙하 — 좌우로 회피'}[R.seg],1.4); SFX.play('whoosh');
 }
-function startBoss(){
+function startBoss(forcedName=null){
   R.seg='boss'; R.segEndZ=R.dist/2.2+1e9; R.py=0; R.vy=0; R.state='run';
   const list=R.mode==='story'?ISSUES[R.issue].bosses:[...ISSUES.flatMap(i=>i.bosses),...EVENT_BOSSES];
   let name; if(R.mode==='story')name=ISSUES[R.issue].bosses[R.ms.bossIdx??0]; else name=list[Math.floor(Math.random()*list.length)];
-  if(Math.random()<0.2&&R.mode==='unl')name=eventInfo().boss;
+  if(forcedName)name=forcedName;
+  if(!forcedName&&Math.random()<0.2&&R.mode==='unl')name=eventInfo().boss;
   R.bossSeen++;
   const bIdx=R.mode==='story'?(R.ms.bossIdx||0):0;
   const baseHp=R.mode==='story'?(R.issue===6?20+bIdx*5:8+R.issue*2+bIdx*2):8+R.issue+R.bossSeen;
   const hp=Math.ceil(baseHp*2.5);
   MUSIC.play('boss',{fade:0.8}); const fam=FAM(name); R.boss={name,fam,stones:endgameStage(name),snapUsed:false,casts:0,hp,max:hp,lvl:R.issue===6?bIdx:0,telK:R.issue===6?1-bIdx*0.07:1,tmax:90+hp*1.8+R.mods.escTime,t:90+hp*1.8+R.mods.escTime,x:0,tx:0,phase:'intro',introT:2.4,taps:0,needTaps:10+R.issue*2+(R.issue===6?bIdx*3:0),tapMax:5+(10+R.issue*2+(R.issue===6?bIdx*3:0))*0.28,tapT:0,shot:0,bob:0,atk:2.8,hurtT:0,decoyT:0,lastTap:-9};
-  $('#hBossName').textContent=name; $('#hBoss').classList.add('on'); FX.cutin(name); setTimeout(()=>{ if(R&&R.boss){ const b=R.boss; VOICE.boss(b.fam,'in').then(dur=>{ if(R&&R.boss===b&&dur>0)b.introT=Math.max(b.introT,0.35+dur+0.3); }); } },350); setHint('보스 등장…',2); R.hazards=[]; R.objs=R.objs.filter(o=>o.type==='vial'||o.type==='iso');
+  $('#hBossName').textContent=name; $('#hBoss').classList.add('on'); FX.cutin(name); const enteredBoss=R.boss; setTimeout(()=>{ if(R&&R.boss===enteredBoss){ const b=enteredBoss; VOICE.boss(b.fam,'in').then(dur=>{ if(R&&R.boss===b&&dur>0)b.introT=Math.max(b.introT,0.35+dur+0.3); }); } },350); setHint('보스 등장…',2); R.hazards=[]; R.objs=R.objs.filter(o=>o.type==='vial'||o.type==='iso');
   R.objs=R.objs.filter(o=>o.type==='vial');
 }
 function endBoss(win){
-  const b=R.boss; if(win){R.bosses++;R.score+=2500*(1+teamMult(5)*0.25);R.vials+=60+R.issue*20;R.iso+=1;S.stats.bossKills++;S.daily.bosses++;toast(b.name+' 격파!');SFX.play('clear');addCombo(5);}
+  const b=R.boss;if(!b||b.endHandled)return;b.endHandled=true;
+  if(win&&b.fam==='ffhFusion'){
+    R.beat=null;R.zip=null;R.spin=0;R.bubble=null;R.hazards=[];R.objs=[];R.inv=Math.max(R.inv,3);
+    startBoss('미스테리오(파 프롬 홈)');
+    R.boss.introT=1.2;R.msg='환영 붕괴 — 미스테리오 등장!';R.msgT=2.5;
+    setHint('진짜 적은 미스테리오! 드론의 조준선을 피하라',3);return;
+  }
+ if(win){R.bosses++;R.score+=2500*(1+teamMult(5)*0.25);R.vials+=60+R.issue*20;R.iso+=1;S.stats.bossKills++;S.daily.bosses++;toast(b.name+' 격파!');SFX.play('clear');addCombo(5);}
   else {toast(b.name+' 도주…');SFX.play('fail');}
   MUSIC.play('main',{fade:1.2}); R.bubble=null; R.boss=null; R.beat=null; R.inv=Math.max(R.inv,1.2); $('#hBoss').classList.remove('on');
   if(R.mode==='story'){ const last=R.ms.bossIdx===ISSUES[R.issue].bosses.length-1; if(win&&last)FX.banner('ISSUE COMPLETE','var(--yellow)'); R.inv=9; setTimeout(()=>{ if(R&&!R.over)finish(true,win?(last?'이슈 최종 보스 격파':'보스 격파 — 러닝 종료'):'보스 도주 — 미션 실패'); },win?1400:800); return; }
@@ -563,7 +571,7 @@ function update(dt){
       if(b.fam==='other'||b.fam==='inheritor'){ b.shot+=dt; if(b.shot>3.2){b.shot=0;R.objs.push({type:'proj',lane:R.lane,z:12,hit:false,fast:true});} }
       if(b.t<=0)endBoss(false); }
     else if(b.phase==='beat'){ R.inv=Math.max(R.inv,0.6); $('#hBossT').style.width=(Math.max(0,1-b.taps/b.needTaps)*100)+'%'; $('#hBossLbl2').textContent=`연타 게이지 ${b.taps}/${b.needTaps}`; $('#hBossT3').style.width=(Math.max(0,b.tapT/b.tapMax)*100)+'%'; if(R.beat){ R.beat.t+=dt; const k=Math.min(1,R.beat.t/0.45); const e=1-Math.pow(1-k,3); R.beat.cur=e*9.6; R.beat.x=lerp(R.beat.x,b.x-0.55,dt*8); R.py=Math.max(0,0.5*Math.sin(k*Math.PI)); } b.tapT-=dt; if(b.taps>=b.needTaps&&b.phase==='beat'){ b.phase='finish'; b.finT=0; b.finT0=performance.now(); VOICE.boss(b.fam,'out'); impact(1.2,proj(b.x,1.4,14).x,proj(b.x,1.4,14).y,'#fff'); R.rgbSplit=0.4; SFX.play('boss'); SFX.play('clear'); const bp=proj(b.x,1.4,14); R.parts.push({x:bp.x,y:bp.y-60,t:0.9,c:'#fff',txt:'FINISH!',rot:-0.15}); for(let i=0;i<14;i++)R.parts.push({x:bp.x+rnd(-40,40),y:bp.y+rnd(-40,40),t:0.6,c:i%2?'#ffd23a':'#fff',dust:true,vx:rnd(-300,300)}); } else if(b.tapT<=0){ b.phase='fight'; b.hp=Math.max(1,Math.ceil(b.max/2)); b.hurtT=0.3; b.atk=2.5; R.beat=null; R.inv=Math.max(R.inv,1.5); toast('RECOVERED!'); setHint('보스가 회복했다 — 다시 SHIELD 폭탄을!',3); SFX.play('fail'); VOICE.boss(b.fam,'rec'); } }
-    else if(b.phase==='finish'){ b.finT+=dt; R.inv=Math.max(R.inv,0.6); if(b.finT>1.3||performance.now()-(b.finT0||0)>2200)endBoss(true); }
+    else if(b.phase==='finish'){ b.finT+=dt; R.inv=Math.max(R.inv,0.6); if((b.fam==='ffhFusion'&&b.finT>0.05)||b.finT>1.3||performance.now()-(b.finT0||0)>2200)endBoss(true); }
   }
   updateZip(dt); updateTitan(dt);
   if(R.boss)updateHazards(dt);
@@ -775,7 +783,7 @@ function codeTable(kind){return `<div class="tbl"><table>${Object.entries(CODES)
 function bindCodes(kind){$('#codeForm').onsubmit=e=>{e.preventDefault();redeem($('#codeIn').value,kind);};$('#dlg').querySelectorAll('.codebtn').forEach(b=>b.onclick=()=>{redeem(b.dataset.code,kind);});}
 $('#bCode').onclick=()=>{const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>쿠폰</h3>${codeFields()}<details class="fold"><summary>쿠폰 목록</summary>${codeTable('coupon')}</details><button class="btn sm ghost" id="dClose">닫기</button></div>`;d.showModal();bindCodes('coupon');$('#dClose').onclick=()=>d.close();};
 $('#bSettings').onclick=()=>{
- const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.18</h3>
+ const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.19</h3>
  <div class="sub-h">사운드</div><div class="actions"><label><input type="checkbox" id="setBgm" ${MUSIC.on?'checked':''}> BGM</label><label><input type="checkbox" id="setSfx" ${SFX.on?'checked':''}> 효과음</label><label><input type="checkbox" id="setVoice" ${VOICE.on?'checked':''}> 보스 보이스</label></div>
  <label>배경음악 <select id="musicMode" style="width:100%;padding:10px;margin:8px 0">${[['auto','챕터에 맞춰 자동 변경',true],['main','기본 BGM 고정',true],['ultron','에이지 오브 울트론 고정',issueUnlocked(6)],['homecoming','홈커밍 고정',issueUnlocked(7)],['infinity','인피니티 워 고정',issueUnlocked(8)],['endgame','엔드게임 고정',issueUnlocked(9)]].map(([k,n,ok])=>`<option value="${k}" ${MUSIC.mode===k?'selected':''} ${ok?'':'disabled'}>${n}${ok?'':' — 챕터 해금 필요'}</option>`).join('')}</select></label>
   <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="checkbox" id="ttsChk" ${VOICE.tts?'checked':''}> 보스 음성 대사(브라우저 TTS) 사용 — 기기에 <b>남성 한국어 음성</b>이 있을 때만 재생됩니다 (현재: ${VOICE.maleVoice()?'감지됨: '+VOICE.maleVoice().name:'남성 음성 없음 → 말풍선만 표시'})</label>
