@@ -12,9 +12,21 @@ const ENERGY_MAX=5, ENERGY_MS=3*60*1000;
 let S=null;
 function fresh(){
   return {vials:1500,iso:60,energy:5,energyAt:now(),owned:{classic:{lv:1,xp:0,dup:0,rk:0},mangaverse:{lv:1,xp:0,dup:0,rk:0}},team:['classic','mangaverse',null],
-    issue:0,mission:0,done:Array(ISSUES.length).fill(0),mdone:{},unl:{date:'',best:0,claimed:[]},event:{key:-1,best:0,claimed:[]},ops:[null,null,null],daily:{date:'',runs:0,dist:0,vials:0,enemies:0,bosses:0,claimed:[]},continues:0,stats:{runs:0,best:0,bossKills:0}};
+    chapterSchema:18,issue:0,mission:0,done:Array(ISSUES.length).fill(0),mdone:{},unl:{date:'',best:0,claimed:[]},event:{key:-1,best:0,claimed:[]},ops:[null,null,null],daily:{date:'',runs:0,dist:0,vials:0,enemies:0,bosses:0,claimed:[]},continues:0,stats:{runs:0,best:0,bossKills:0}};
 }
-function load(){try{const j=localStorage.getItem(SAVE_KEY);if(j){S=Object.assign(fresh(),JSON.parse(j));}}catch(e){} if(!S)S=fresh(); S.done=Array.from({length:ISSUES.length},(_,i)=>(S.done||[])[i]||0); normTeam(); tickEnergy();}
+// Move saved chapter identities once, before applying fresh defaults.
+function migrateChapters18(old){
+ if((old.chapterSchema||0)>=18)return old;
+ const done=old.done||[],m=old.mdone||{};
+ const unlockedInfinity=!!old.unlockAll||(m.i6||0)>=11;
+ const unlockedEnd=!!old.unlockAll||(m.i7||0)>=14;
+ old.done=[...Array.from({length:7},(_,i)=>done[i]||0),0,done[7]||0,done[8]||0];
+ old.mdone={...m,i7:0,i8:m.i7||0,i9:m.i8||0};
+ old.chapterAccess={...(old.chapterAccess||{}),8:unlockedInfinity,9:unlockedEnd};
+ if((old.issue||0)>=7)old.issue++;
+ old.chapterSchema=18;return old;
+}
+function load(){try{const j=localStorage.getItem(SAVE_KEY);if(j){S=Object.assign(fresh(),migrateChapters18(JSON.parse(j)));}}catch(e){} if(!S)S=fresh(); S.done=Array.from({length:ISSUES.length},(_,i)=>(S.done||[])[i]||0); normTeam(); tickEnergy(); save();}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 function tickEnergy(){ if(S.energy>=ENERGY_MAX){S.energyAt=now();return;} const el=now()-S.energyAt; const g=Math.floor(el/ENERGY_MS); if(g>0){S.energy=Math.min(ENERGY_MAX,S.energy+g);S.energyAt=S.energy>=ENERGY_MAX?now():S.energyAt+g*ENERGY_MS;} }
 function dailyCheck(){const t=todayKey(); if(S.daily.date!==t){S.daily={date:t,runs:0,dist:0,vials:0,enemies:0,bosses:0,claimed:[]};} if(S.unl.date!==t){S.unl={date:t,best:0,claimed:[]};} const wk=Math.floor(now()/864e5/7); if(S.event.key!==wk){S.event={key:wk,best:0,claimed:[]};}}
@@ -42,7 +54,7 @@ function leaderMods(){ const lid=leadId(); const base={vialMul:1,scoreMul:1,comb
 // ===== 미션 생성 =====
 const missionCount=i=>ISSUES[i].bosses.length*5;
 const halfNeed=i=>Math.ceil(missionCount(i)/2)+1; // 절반(최소 보스 2명 포함)
-const issueUnlocked=i=>i===0||!!S.unlockAll||(S.mdone['i'+(i-1)]||0)>=halfNeed(i-1);
+const issueUnlocked=i=>i===0||!!S.unlockAll||!!S.chapterAccess?.[i]||(S.mdone['i'+(i-1)]||0)>=halfNeed(i-1);
 function genMission(i,m){
   if(m%5===4)return {t:'boss',label:`보스 격파 — ${ISSUES[i].bosses[Math.floor(m/5)]}`,n:1,bossIdx:Math.floor(m/5)};
   const k=m%4; const tt=MISSION_TYPES[k];
@@ -72,7 +84,7 @@ function renderStory(){
   $('#issues').querySelectorAll('.issue').forEach(b=>b.onclick=()=>{S.issue=+b.dataset.i;if(S.issue<S.done.length&&S.done[S.issue])S.mission=S.mdone['i'+S.issue]??0;else S.mission=S.mdone['i'+S.issue]??0;save();renderStory();MUSIC.play('main');});
   const is=ISSUES[S.issue]; const total=missionCount(S.issue); const progI=Math.min(S.mdone['i'+S.issue]||0,total-1); if(S.mission>progI)S.mission=progI; const m=Math.min(S.mission,total-1); const ms=genMission(S.issue,m); const replay=m<(S.mdone['i'+S.issue]||0);
   $('#missionBox').innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><h3 style="font-size:20px;color:#fff">이슈 #${is.n} · ${is.title}</h3><span style="color:var(--dim);font-size:12px">${is.env}</span></div>
-   <p class="lead" style="font-size:13px">${is.intro}</p><p class="lead" style="font-size:12px"><b>보스 기믹</b> — ${is.gimmick}${S.issue===8?'<br>'+ENDGAME_STONES.map((s,i)=>(i+1)+'. '+s.skill).join(' / '):''} · 보스는 <b>B</b> 미션에서만 등장 · 다음 이슈는 이 이슈를 절반(${halfNeed(S.issue)}개) 클리어하면 열림</p>
+   <p class="lead" style="font-size:13px">${is.intro}</p><p class="lead" style="font-size:12px"><b>보스 기믹</b> — ${is.gimmick}${S.issue===9?'<br>'+ENDGAME_STONES.map((s,i)=>(i+1)+'. '+s.skill).join(' / '):''} · 보스는 <b>B</b> 미션에서만 등장 · 다음 이슈는 이 이슈를 절반(${halfNeed(S.issue)}개) 클리어하면 열림</p>
    <div class="ms">${Array.from({length:total},(_,k)=>{const pr=S.mdone['i'+S.issue]||0; const cls=(k<pr?'done':'')+(k===m?' cur':'')+(k%5===4?' b':'')+(k<=pr?' pick':''); return `<span class="${cls}" data-m="${k}" title="${k<pr?'클리어 — 다시 플레이':k===pr?'현재 미션':'잠김'}">${k%5===4?'B':k+1}</span>`;}).join('')}</div>
    <div class="obj">미션 ${m+1}/${total} — <b>${ms.label}</b>${replay?' <span style="color:var(--muted);font-size:12px">(재도전 — 진행도에 영향 없음)</span>':''}${S.mission>=total?' <span style="color:var(--green)">(이슈 완료 · 재도전)</span>':''}</div>`;
   $('#missionBox').querySelectorAll('.ms span.pick').forEach(sp=>{ sp.style.cursor='pointer'; sp.onclick=()=>{ S.mission=+sp.dataset.m; save(); renderStory(); }; });
@@ -763,9 +775,9 @@ function codeTable(kind){return `<div class="tbl"><table>${Object.entries(CODES)
 function bindCodes(kind){$('#codeForm').onsubmit=e=>{e.preventDefault();redeem($('#codeIn').value,kind);};$('#dlg').querySelectorAll('.codebtn').forEach(b=>b.onclick=()=>{redeem(b.dataset.code,kind);});}
 $('#bCode').onclick=()=>{const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>쿠폰</h3>${codeFields()}<details class="fold"><summary>쿠폰 목록</summary>${codeTable('coupon')}</details><button class="btn sm ghost" id="dClose">닫기</button></div>`;d.showModal();bindCodes('coupon');$('#dClose').onclick=()=>d.close();};
 $('#bSettings').onclick=()=>{
- const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.17</h3>
+ const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.18</h3>
  <div class="sub-h">사운드</div><div class="actions"><label><input type="checkbox" id="setBgm" ${MUSIC.on?'checked':''}> BGM</label><label><input type="checkbox" id="setSfx" ${SFX.on?'checked':''}> 효과음</label><label><input type="checkbox" id="setVoice" ${VOICE.on?'checked':''}> 보스 보이스</label></div>
- <label>배경음악 <select id="musicMode" style="width:100%;padding:10px;margin:8px 0">${[['auto','챕터에 맞춰 자동 변경',true],['main','기본 BGM 고정',true],['ultron','에이지 오브 울트론 고정',issueUnlocked(6)],['infinity','인피니티 워 고정',issueUnlocked(7)]].map(([k,n,ok])=>`<option value="${k}" ${MUSIC.mode===k?'selected':''} ${ok?'':'disabled'}>${n}${ok?'':' — 챕터 해금 필요'}</option>`).join('')}</select></label>
+ <label>배경음악 <select id="musicMode" style="width:100%;padding:10px;margin:8px 0">${[['auto','챕터에 맞춰 자동 변경',true],['main','기본 BGM 고정',true],['ultron','에이지 오브 울트론 고정',issueUnlocked(6)],['homecoming','홈커밍 고정',issueUnlocked(7)],['infinity','인피니티 워 고정',issueUnlocked(8)],['endgame','엔드게임 고정',issueUnlocked(9)]].map(([k,n,ok])=>`<option value="${k}" ${MUSIC.mode===k?'selected':''} ${ok?'':'disabled'}>${n}${ok?'':' — 챕터 해금 필요'}</option>`).join('')}</select></label>
   <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="checkbox" id="ttsChk" ${VOICE.tts?'checked':''}> 보스 음성 대사(브라우저 TTS) 사용 — 기기에 <b>남성 한국어 음성</b>이 있을 때만 재생됩니다 (현재: ${VOICE.maleVoice()?'감지됨: '+VOICE.maleVoice().name:'남성 음성 없음 → 말풍선만 표시'})</label>
   <div id="ctrlbox"></div>
 <details class="fold"><summary>테스트용 치트</summary>${codeFields()}${codeTable('cheat')}</details>

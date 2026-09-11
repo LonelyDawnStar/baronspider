@@ -275,9 +275,11 @@ const MUSIC={on:true,vol:0.5,cur:null,bufs:{},nodes:{},duckT:0,started:false,
     const mode=this.mode;
     if(mode==='main')return 'main';
     if(mode==='ultron'&&issueUnlocked(6))return 'ultron';
-    if(mode==='infinity'&&issueUnlocked(7))return 'infinity';
+    if(mode==='homecoming'&&issueUnlocked(7))return 'homecoming';
+    if(mode==='infinity'&&issueUnlocked(8))return 'infinity';
+    if(mode==='endgame'&&issueUnlocked(9))return 'endgame';
     const i=R?R.issue:S.issue;
-    return i===6?'ultron':i===7?'infinity':k;
+    return i===6?'ultron':i===7?'homecoming':i===8?'infinity':i===9?'endgame':k;
   },
   setMode(mode){this.mode=mode;try{localStorage.setItem('wru_music_mode',mode);}catch(e){}this.play(R&&R.boss?'boss':'main');},
   bus(){if(!this.out){this.out=SFX.ac.createGain();this.out.gain.value=this.on?this.vol:0;this.out.connect(SFX.ac.destination);}return this.out;},
@@ -286,7 +288,7 @@ const MUSIC={on:true,vol:0.5,cur:null,bufs:{},nodes:{},duckT:0,started:false,
     if(!this.on||document.hidden)return;
     SFX.resume();if(!SFX.ac)return;
     const k=this.resolve(requested);if(this.cur===k&&this.nodes[k])return;
-    const url=k==='ultron'?'assets/audio/age-of-ultron.mp3':k==='infinity'?'assets/audio/infinity-war.mp3':BUILTIN_BGM[k];
+    const url=k==='homecoming'?'assets/audio/homecoming.mp3':k==='endgame'?'assets/audio/endgame.mp3':k==='ultron'?'assets/audio/age-of-ultron.mp3':k==='infinity'?'assets/audio/infinity-war.mp3':BUILTIN_BGM[k];
     if(!url)return;
     for(const n of [...this.retiring])this.dispose(n);
     const ac=SFX.ac,t=ac.currentTime;
