@@ -309,7 +309,7 @@ function drawInfinityBoss(fam,t,b){
  const armAngle=side=>{
    const idle=Math.sin(t*1.7+side)*.025;
    if(end){
-     if(side<0)return idle+wind*.25-hit*.5;
+     if(side<0)return idle+(motion.vis==='doubleblade'?wind*1.1-hit*2.2:motion.vis==='doublebladeThrow'?-wind*.8+hit*1.5:wind*.25-hit*.5);
      const v=motion.vis;
      if(v==='snap')return idle-.95-wind*.9+hit*.18;
      if(v==='stone0'||v==='stone4')return idle-.95-wind*1.15+hit*1.6;
@@ -527,8 +527,12 @@ const PATTERNS={
    b.casts=b.casts||0;
    if(n===6&&!b.snapUsed&&(b.hp<=b.max*.5||b.casts>=6)){
      b.snapUsed=true;const safe=Math.floor(PR()*3);
-     return [{kind:'strike',lanes:[0,1,2].filter(l=>l!==safe),tel:3.2,minTel:3.2,dur:.4,vis:'snap',safe,label:'핑거 스냅 · SAFE로 이동',damage:99}];
+     return [{kind:'strike',lanes:[0,1,2].filter(l=>l!==safe),tel:3.2,minTel:3.2,dur:.4,vis:'snap',safe,label:'핑거 스냅 · SAFE로 이동',instant:true}];
    }
+   b.turns=(b.turns||0)+1;
+   if(b.turns%3===0){const l=Math.floor(PR()*3);return [
+     {kind:'high',lanes:[0,1,2],tel:1.5,dur:.3,vis:'doubleblade',label:'쌍날검 · 횡베기 — SLIDE'},
+     {kind:'strike',lanes:[l],tel:2.9,dur:.3,vis:'doublebladeThrow',label:'쌍날검 · 회전 투척 — 차선 이동'}];}
    // Newest stone first, then every acquired stone; no unlocked skill is starved by RNG.
    const stone=(n-1-(b.casts++%n)+n)%n,l=Math.floor(PR()*3);
    const h=(kind,lanes,tel,extra={})=>({kind,lanes,tel,dur:.3,vis:'stone'+stone,stone,label:ENDGAME_STONES[stone].skill,...extra});
@@ -617,7 +621,7 @@ function updateHazards(dt){
     if(inWin&&!h.done&&h.lanes.includes(R.lane)&&Math.abs(R.px-(R.lane-1))<0.5){
       const evade=h.kind==='low'?(R.state==='jump'&&R.py>0.25):h.kind==='high'?R.state==='slide':false;
       if(evade){ h.done=true; if(!h.evaded){h.evaded=true;addCombo(1);R.msg='NICE DODGE';R.msgT=0.6;} }
-      else if(h.t>=h.tel){ h.done=true; if(h.soft)softHit(); else hitPlayer(h.damage||1); } }
+      else if(h.t>=h.tel){ h.done=true; if(h.soft)softHit(); else hitPlayer(h.damage||1,!!h.instant); } }
     if(h.t>=h.tel&&!h.sfx){h.sfx=true;SFX.play(h.kind==='strike'?'bomb':'whoosh');R.shake=Math.max(R.shake,0.25);} }
   R.hazards=R.hazards.filter(h=>h.t<h.tel+h.dur+0.4);
 }
@@ -630,7 +634,7 @@ function hazardWarning(h){
 }
 function drawHazards(){
   const activeLabel=R.hazards.find(h=>h.label&&h.t<h.tel+h.dur);
-  if(activeLabel){ctx.save();ctx.fillStyle='#121521dd';ctx.fillRect(W*.15,H*.18,W*.7,48);ctx.fillStyle=activeLabel.vis==='snap'?'#ffe5a1':ENDGAME_STONES[activeLabel.stone].color;ctx.textAlign='center';ctx.font=`900 ${Math.min(24,W/28)}px sans-serif`;ctx.fillText(activeLabel.label,W/2,H*.18+31);ctx.restore();}
+  if(activeLabel){ctx.save();ctx.fillStyle='#121521dd';ctx.fillRect(W*.15,H*.18,W*.7,48);ctx.fillStyle=activeLabel.vis==='snap'?'#ffe5a1':(ENDGAME_STONES[activeLabel.stone]?.color||'#dfc98d');ctx.textAlign='center';ctx.font=`900 ${Math.min(24,W/28)}px sans-serif`;ctx.fillText(activeLabel.label,W/2,H*.18+31);ctx.restore();}
   for(const h of R.hazards){ const k=h.t/h.tel; const act=h.t>=h.tel; const fade=act?Math.max(0,1-(h.t-h.tel)/(h.dur+0.4)):1;
     if(h.vis==='snap'&&!act){const p=proj(h.safe-1,0,4);ctx.save();ctx.fillStyle='#4eeac8';ctx.font='900 30px sans-serif';ctx.textAlign='center';ctx.fillText('SAFE',p.x,p.y-70*p.s);ctx.strokeStyle='#4eeac8';ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(p.x,p.y,55*p.s,18*p.s,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
     for(const l of h.lanes){ const lx=l-1;
@@ -644,6 +648,11 @@ function drawHazards(){
       } else { // 발동 비주얼
         ctx.globalAlpha=fade; const p=proj(lx,0,4); ctx.save(); ctx.translate(p.x,p.y); ctx.scale(p.s,p.s);
         switch(h.vis){
+          case 'doubleblade':case 'doublebladeThrow':{
+            ctx.translate(0,h.kind==='high'?-160:-85);ctx.rotate(h.vis==='doublebladeThrow'?h.t*16:(1-fade)*2-1);
+            ctx.fillStyle='#b9a66c';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-105,-24);ctx.lineTo(-35,-8);ctx.lineTo(105,16);ctx.lineTo(105,34);ctx.lineTo(30,8);ctx.lineTo(-105,-8);ctx.closePath();ctx.fill();ctx.stroke();
+            ctx.strokeStyle='#fff0b1';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-98,-20);ctx.lineTo(98,20);ctx.stroke();break;
+          }
           case 'stone0':case 'stone1':case 'stone2':case 'stone3':case 'stone4':case 'stone5':case 'snap':{
             const stone=h.stone??5,col=ENDGAME_STONES[stone].color,age=Math.min(1,(h.t-h.tel)/Math.max(.01,h.dur));
             ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=7;

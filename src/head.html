@@ -364,6 +364,15 @@ body.ingame #cv{width:100%;height:100%}
 .fold .help{padding:0 10px 10px}
 .fold .foldbody{padding:0 10px 10px;display:flex;flex-direction:column;gap:8px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important;transition-duration:.001s!important}}
+
+/* 0.16: fixed HUD corners, including narrow portrait screens. */
+.hud .playerhud{position:absolute;top:12px;left:12px;width:46%;max-width:340px;display:flex;flex-direction:column;gap:6px}
+.hud .playerhud .obj{width:100%;box-sizing:border-box;transform:none;overflow-wrap:anywhere}
+.hud .playerhud .obj>*{transform:none}.hud .objp{flex-wrap:wrap}.hud .objp .bar{min-width:40px}
+.hud .playerhud .combo{text-align:left;align-self:flex-start}
+.hud .bossbars{position:absolute;top:12px;right:12px;width:43%;max-width:320px;box-sizing:border-box}
+.hud .bossbars.on{display:flex}.hud .bossname{font-size:clamp(12px,2.2vw,17px);overflow-wrap:anywhere;transform:none}
+.hud .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);max-width:85%}
 </style>
 
 <div id="app">
@@ -380,14 +389,13 @@ body.ingame #cv{width:100%;height:100%}
  <section id="stage">
   <canvas id="cv" width="1280" height="720"></canvas>
   <div class="hud">
-   <div class="row">
-    <div><div class="score num" id="hScore">0</div><div class="sub"><span id="hBuff" style="color:var(--cyan)"></span><span class="num" id="hDist">0</span>m · 바이알 <span class="num" id="hVial">0</span> · 적 <span class="num" id="hEnemy">0</span></div></div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-     <div class="obj"><span id="hObj"></span><div class="objp"><div class="bar" style="height:8px"><i id="hObjBar" style="width:0%"></i></div><span class="num" id="hObjNum"></span></div></div>
-     <div class="combo" id="hCombo">×1</div>
-    </div>
+   <div class="playerhud"><div class="score num" id="hScore">0</div>
+    <div class="sub"><span class="num" id="hDist">0</span>m · 바이알 <span id="hVial">0</span> · 적 <span id="hEnemy">0</span></div>
+    <div class="sub" id="hLife"></div><div class="sub" id="hBuff"></div>
+    <div class="obj"><span id="hObj"></span><div class="objp"><div class="bar" style="height:8px"><i id="hObjBar" style="width:0%"></i></div><span class="num" id="hObjNum"></span></div></div>
+    <div class="combo" id="hCombo">×1</div>
    </div>
-   <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;justify-content:flex-end;padding-top:6px"><div class="bossbars" id="hBoss"><div class="bossname" id="hBossName"></div><div class="blbl">체력 — SHIELD 폭탄으로 깎기</div><div class="bar"><i id="hBossHp" style="width:100%"></i></div><div class="blbl" id="hBossLbl2">도주 타이머</div><div class="bar t"><i id="hBossT" style="width:100%"></i></div><div class="bar y" style="height:5px"><i id="hBossT3" style="width:0%"></i></div></div><div class="hint" id="hHint"></div></div>
+   <div class="bossbars" id="hBoss"><div class="bossname" id="hBossName"></div><div class="blbl">체력 <span id="hBossHpNum"></span></div><div class="bar"><i id="hBossHp" style="width:100%"></i></div><div class="blbl" id="hBossLbl2">도주 타이머</div><div class="bar t"><i id="hBossT" style="width:100%"></i></div><div class="bar y" style="height:5px"><i id="hBossT3" style="width:0%"></i></div></div><div class="hint" id="hHint"></div>
   </div>
   <div class="flash" id="fxFlash"></div>
   <div class="wipe" id="fxWipe"></div>
