@@ -502,6 +502,10 @@ function updateTitan(dt){ const T=R.mods.titan; if(!T)return; const pz=R.dist/2.
       for(const o of R.objs){ if(o.hit||o.type!=='bomb')continue; const dz=o.z-pz; if(dz<2.5&&dz>-0.3&&o.lane!==R.lane&&Math.abs(o.lane-R.lane)===1){ o.lane=R.lane; R.tentFx={lane:o.lane,dz,t:0.25}; } } }
 }
 function updateZip(dt){ const z=R.zip; if(!z)return; z.t+=dt; const pz=R.dist/2.2; const o=z.o; const dzNow=o.z-pz;
+  if(!z.done&&(o.hit||o.passed||!R.objs.includes(o)||R.dead||
+    (o.type==='bomb'&&(!R.boss||R.boss.phase!=='fight'||R.lane!==o.lane)))){
+    R.zip=null;return;
+  }
   if(!z.done){ const k=Math.min(1,z.t/z.dur); z.cur=lerp(0,Math.max(0.3,dzNow),1-Math.pow(1-k,3)); R.py=Math.max(R.py,0.9+Math.sin(k*Math.PI)*0.6); R.vy=Math.max(R.vy,0);
     if(k>=1||dzNow<1.0){ z.done=true; z.t=0; if(o.type==='bomb'){strikeShield(o,true);return;} if(!o.hit){ o.hit=true; R.enemies++; R.score+=140*(1+teamMult(4)*0.1); addCombo(2); { const ip=proj(o.lane-1,0.9,Math.max(0,dzNow)); impact(0.55,ip.x,ip.y,'#fff'); ragdoll(o,dzNow); }  SFX.play('kill'); R.shake=0.25; const p=proj(o.lane-1,0.9,Math.max(0,dzNow)); R.parts.push({x:p.x,y:p.y-40,t:0.5,c:'#ffd23a',txt:'KICK!',rot:rnd(-0.3,0.3)}); for(let i=0;i<8;i++)R.parts.push({x:p.x+rnd(-20,20),y:p.y+rnd(-20,20),t:0.35,c:'#ff5a5f',dust:true,vx:rnd(-120,120)}); } } }
   else { const k=Math.min(1,z.t/z.back); z.cur=lerp(z.cur,0,k*0.5+dt*6); if(k>=1){R.zip=null;} } }
@@ -717,14 +721,17 @@ function drawFigure(x,y,s,c1,c2,ph,kind,state){
 let dtLast=0.016;
 let pvValid=false; const pv=document.createElement('canvas'); pv.width=W; pv.height=H; const pvx=pv.getContext('2d'); fitCanvas();
 // Patch 0.2: SHIELD damage feedback without pausing simulation or allocating voice noise.
-// Patch 0.4: touch alone cannot trigger boss damage.
+// Patch 0.21: validate physical contact and web-zip target before boss damage.
 function strikeShield(o,attacking=R.state==='jump'||R.state==='slide'){
-  if(o.hit||o.type!=='bomb'||!R.boss||R.boss.phase!=='fight')return;
+  if(!canStrikeShield(o,true,attacking&&R.zip?.o===o))return;
   o.hit=true;R.boss.hp-=R.mods.bombDmg*(attacking?2:1);R.boss.hurtT=0.35;R.score+=300;shieldImpact(R.boss);addCombo(1);if(R.boss.hp<=0){R.boss.phase='beat';R.boss.tapT=R.boss.tapMax;R.boss.taps=0;R.beat={t:0,cur:0,x:R.px};R.zip=null;R.hazards=[];R.objs=R.objs.filter(o=>o.type==='vial');SFX.play('web');setHint(`연타! (탭 / 스페이스 / ↑) ×${R.boss.needTaps} — 파란 게이지를 비워라`,4);toast('FINISH HIM!');}
 }
-function canStrikeShield(o,same){
-  return o.type==='bomb'&&!o.hit&&same&&R.boss&&R.boss.phase==='fight'&&
-    (!R.zip||R.zip.o!==o||R.zip.done);
+function canStrikeShield(o,same,zipHit=false){
+  if(o.type!=='bomb'||o.hit||o.passed||R.dead||!R.boss||R.boss.phase!=='fight')return false;
+  if(!same||Math.abs(R.px-(o.lane-1))>=0.55)return false;
+  const dz=o.z-R.dist/2.2;
+  if(zipHit)return R.zip?.o===o&&dz>=-0.5&&Math.abs(dz-(R.zip.cur||0))<0.7;
+  return dz>-0.5&&dz<0.7&&R.py<0.95&&(!R.zip||R.zip.o!==o||R.zip.done);
 }
 function shieldImpact(b){
   b.shieldHitAt=R.t;
@@ -784,7 +791,7 @@ function codeTable(kind){return `<div class="tbl"><table>${Object.entries(CODES)
 function bindCodes(kind){$('#codeForm').onsubmit=e=>{e.preventDefault();redeem($('#codeIn').value,kind);};$('#dlg').querySelectorAll('.codebtn').forEach(b=>b.onclick=()=>{redeem(b.dataset.code,kind);});}
 $('#bCode').onclick=()=>{const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>쿠폰</h3>${codeFields()}<details class="fold"><summary>쿠폰 목록</summary>${codeTable('coupon')}</details><button class="btn sm ghost" id="dClose">닫기</button></div>`;d.showModal();bindCodes('coupon');$('#dClose').onclick=()=>d.close();};
 $('#bSettings').onclick=()=>{
- const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.20</h3>
+ const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.21</h3>
  <div class="sub-h">사운드</div><div class="actions"><label><input type="checkbox" id="setBgm" ${MUSIC.on?'checked':''}> BGM</label><label><input type="checkbox" id="setSfx" ${SFX.on?'checked':''}> 효과음</label><label><input type="checkbox" id="setVoice" ${VOICE.on?'checked':''}> 보스 보이스</label></div>
  <label>배경음악 <select id="musicMode" style="width:100%;padding:10px;margin:8px 0">${[['auto','챕터에 맞춰 자동 변경',true],['main','기본 BGM 고정',true],['ultron','에이지 오브 울트론 고정',issueUnlocked(6)],['homecoming','홈커밍 고정',issueUnlocked(7)],['infinity','인피니티 워 고정',issueUnlocked(8)],['endgame','엔드게임 고정',issueUnlocked(9)]].map(([k,n,ok])=>`<option value="${k}" ${MUSIC.mode===k?'selected':''} ${ok?'':'disabled'}>${n}${ok?'':' — 챕터 해금 필요'}</option>`).join('')}</select></label>
   <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="checkbox" id="ttsChk" ${VOICE.tts?'checked':''}> 보스 음성 대사(브라우저 TTS) 사용 — 기기에 <b>남성 한국어 음성</b>이 있을 때만 재생됩니다 (현재: ${VOICE.maleVoice()?'감지됨: '+VOICE.maleVoice().name:'남성 음성 없음 → 말풍선만 표시'})</label>
