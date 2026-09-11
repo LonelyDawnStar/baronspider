@@ -1086,6 +1086,7 @@ function drawBrandNewDayBoss(b,t){
  drawBndMember(b,t,k);
 }
 function drawBndMember(b,t,k){
+ if(k===3){drawJeanGrey(b,t);return;}
  const active=R?.hazards?.find(h=>h.fam===b.fam&&h.actor===k&&h.t>h.tel-.65&&h.t<h.tel+.4);
  const d=active?active.t-active.tel:-10,w=active?d<0?(d+.65)/.65:Math.max(0,1-d/.4):0;
  const p=(a,c)=>inkPath(()=>a.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)),c,2);
@@ -1126,5 +1127,59 @@ function drawBndMember(b,t,k){
  if(k===2){p([[-21,-182],[21,-182],[18,-169],[-18,-169]],'#bacfd3');line([[-15,-179],[13,-179]],'#eff9f9',2);}
  if(k===5){p([[-11,-125],[11,-125],[14,-111],[7,-105],[7,-98],[-7,-98],[-7,-105],[-14,-111]],'#b6beb7');blob(-5,-115,3,3,'#30373b',0);blob(5,-115,3,3,'#30373b',0);}
  if(k===3)for(let j=0;j<4;j++){ctx.save();ctx.translate(Math.cos(t+j*1.57)*63,-130+Math.sin(t+j*1.57)*47);ctx.rotate(t+j);p([[-9,-8],[8,-10],[12,8],[-8,10]],'#8f8895');ctx.restore();}
+ ctx.restore();
+}
+
+// 0.23: Jean-specific face, wavy hair and jacket, animated from combat cues.
+function drawJeanGrey(b,t){
+ const h=R?.hazards?.find(h=>h.fam===b.fam&&h.t>h.tel-.65&&h.t<h.tel+.4);
+ const d=h?h.t-h.tel:-10,a=h?d<0?(d+.65)/.65:Math.max(0,1-d/.4):0;
+ const p=(v,c)=>inkPath(()=>v.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)),c,1.6);
+ const line=(v,c,n=1.5)=>{ctx.beginPath();v.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=c;ctx.lineWidth=n;ctx.lineCap='round';ctx.stroke();};
+ const curve=(fn,c,n=1.5)=>{ctx.beginPath();fn();ctx.strokeStyle=c;ctx.lineWidth=n;ctx.stroke();};
+ ctx.save();ctx.translate(0,-20+Math.sin(t*2)*4);
+ // Hair behind shoulders.
+ inkPath(()=>{ctx.moveTo(-19,-184);ctx.bezierCurveTo(-40,-172,-24,-145,-38,-115);ctx.quadraticCurveTo(-17,-119,-11,-134);ctx.lineTo(17,-134);ctx.quadraticCurveTo(36,-115,38,-128);ctx.bezierCurveTo(20,-151,38,-181,18,-195);ctx.quadraticCurveTo(-5,-207,-19,-184);},'#663c2b',1.6);
+ for(const s of [-1,1]){
+  p([[s*3,-78],[s*20,-78],[s*21,-37],[s*8,-35]],'#2b3038');
+  p([[s*8,-38],[s*21,-38],[s*23,-6],[s*10,-5]],'#30363d');
+  p([[s*9,-9],[s*24,-9],[s*31,2],[s*8,2]],'#1c252e');
+  line([[s*16,-30],[s*18,-10]],'#67717b',1);
+ }
+ p([[-21,-139],[-10,-145],[10,-145],[23,-137],[19,-98],[23,-73],[-23,-73],[-18,-98]],'#252f38');
+ p([[-8,-141],[8,-141],[9,-82],[-9,-82]],'#161e29');
+ // Ochre lining of the lowered hood and jacket lapels.
+ for(const s of [-1,1]){
+  p([[s*9,-144],[s*25,-140],[s*29,-127],[s*18,-130],[s*10,-112]],'#ad9059');
+  p([[s*21,-130],[s*11,-110],[s*13,-80],[s*22,-75],[s*18,-101]],'#3f4547');
+  line([[s*12,-109],[s*14,-82]],'#7d817d',1);
+  ctx.save();ctx.translate(s*23,-134);ctx.rotate(s*(-.32-a*.85));
+  p([[-7,0],[7,0],[10,28],[6,48],[-5,48],[-9,28]],'#2a333c');
+  line([[-3,7],[-5,28],[-2,41]],'#667075',2);
+  blob(0,51,5,7,'#e1b8a0',1);
+  for(let j=0;j<4;j++)line([[-4+j*2.6,52],[-6+j*3.6,60+(j%2)*2]],'#e1b8a0',2);
+  ctx.strokeStyle='#e8b3e2';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(0,54,14+a*6,10+a*6,t,0,7);ctx.stroke();
+  ctx.restore();
+ }
+ p([[-6,-151],[6,-151],[7,-140],[0,-136],[-7,-140]],'#ddb299');
+ // Curved jaw and cheeks, independent of the common boss head.
+ inkPath(()=>{ctx.moveTo(-15,-181);ctx.bezierCurveTo(-18,-170,-13,-156,-6,-152);ctx.quadraticCurveTo(0,-148,6,-152);ctx.bezierCurveTo(14,-156,17,-172,14,-183);ctx.quadraticCurveTo(0,-195,-15,-181);},'#edc4ab',1.3);
+ for(const s of [-1,1]){
+  curve(()=>{ctx.moveTo(s*3,-174);ctx.quadraticCurveTo(s*8,-177,s*13,-173);},'#805440',1.2);
+  inkPath(()=>{ctx.moveTo(s*3,-170);ctx.quadraticCurveTo(s*8,-174,s*13,-170);ctx.quadraticCurveTo(s*8,-167,s*3,-170);},'#f1eee1',.65);
+  blob(s*8,-170,2.2,2.5,'#639a9d',0);blob(s*8,-170,1,1.7,'#213b46',0);blob(s*8-.6,-171,.65,.65,'#fff',0);
+  line([[s*3,-171],[s*8,-173],[s*13,-171]],'#563e35',.8);
+ }
+ curve(()=>{ctx.moveTo(0,-170);ctx.quadraticCurveTo(-2,-164,1,-163);},'#b88774',.8);
+ curve(()=>{ctx.moveTo(-5,-158);ctx.quadraticCurveTo(0,-160,5,-158);ctx.quadraticCurveTo(0,-155,-5,-158);},'#b97672',1);
+ // Swept bangs and moving side locks.
+ inkPath(()=>{ctx.moveTo(-18,-170);ctx.bezierCurveTo(-26,-190,-9,-200,5,-194);ctx.bezierCurveTo(24,-196,24,-180,17,-168);ctx.lineTo(12,-184);ctx.quadraticCurveTo(4,-181,1,-177);ctx.lineTo(4,-189);ctx.quadraticCurveTo(-7,-179,-18,-170);},'#814830',1.2);
+ for(const s of [-1,1]){
+  const wind=Math.sin(t*2+s)*3;
+  curve(()=>{ctx.moveTo(s*17,-180);ctx.bezierCurveTo(s*27,-167,s*13,-153,s*24+wind,-141);ctx.quadraticCurveTo(s*33+wind,-131,s*24,-125);},'#95573a',8);
+  curve(()=>{ctx.moveTo(s*18,-179);ctx.bezierCurveTo(s*25,-163,s*15,-150,s*25+wind,-137);},'#c18450',1.6);
+ }
+ curve(()=>{ctx.moveTo(-17,-182);ctx.quadraticCurveTo(-8,-194,3,-192);},'#b47749',1.5);
+ for(let j=0;j<4;j++){ctx.save();ctx.translate(Math.cos(t+j*1.57)*64,-115+Math.sin(t+j*1.57)*35);ctx.rotate(t+j);p([[-7,-6],[7,-8],[10,6],[-6,8]],'#918b9c');ctx.restore();}
  ctx.restore();
 }
