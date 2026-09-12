@@ -1307,31 +1307,23 @@ function chapterMark(i,c){
  }
 }
 function drawChapterSurface(type,z0,z1){
- const i=R.issue,th=CHAPTER_STYLE[i],travel=(R.dist/2.2)%4;
+ const i=R.issue,th=CHAPTER_STYLE[i],travel=(R.dist/2.2)%14;
  const poly=(pts,c)=>{ctx.beginPath();pts.forEach(([x,y,z],j)=>{const v=proj(x,y,z);j?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y);});ctx.closePath();ctx.fillStyle=c;ctx.fill();};
  const tile=(l,r,a,b,c)=>poly([[l,0,a],[r,0,a],[r,0,b],[l,0,b]],c);
+ // Unbroken road: no checkerboard, repeated center emblems or cross-lane stripes.
  tile(-1.75,1.75,z0,z1,th.floor);
- for(let z=-travel;z<z1;z+=4){const lo=Math.max(z0,z),hi=Math.min(z1,z+3.85);if(hi<=lo)continue;
- for(const l of [-1,0,1]){
-  tile(l-.47,l+.47,lo,hi,shade(th.floor,((Math.floor(z/4)+l)%2)? .12:-.08));
-  const v=proj(l,0,(lo+hi)/2);ctx.save();ctx.translate(v.x,v.y);ctx.scale(v.s*.65,v.s*.23);chapterMark(i,shade(th.accent,-.3));ctx.restore();
- }
- // Material-specific seams, channels and cross beams.
- if([1,4,6,7,11].includes(i))tile(-1.7,1.7,lo,Math.min(hi,lo+.22),th.wall);
- if([2,8,13].includes(i))for(const l of [-1.55,1.55])tile(l-.035,l+.035,lo,hi,th.accent);
- if(i===3||i===9)poly([[-1.6,0,lo],[-.7,0,lo+.3],[-.9,0,hi],[-1.1,0,lo+.5]],shade(th.floor,-.5));
- }
- for(const x of [-.5,.5]){const a=proj(x,0,z0),b=proj(x,0,z1);ctx.strokeStyle='#ffffff55';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+ for(const side of [-1,1])tile(side<0?-1.75:1.61,side<0?-1.61:1.75,z0,z1,shade(th.floor,.12));
+ for(const x of [-.5,.5]){const a=proj(x,0,z0),b=proj(x,0,z1);ctx.strokeStyle='#ffffff30';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
  if(['swing','wall','fall'].includes(type)){
  for(const side of [-1,1]){
  poly([[side*1.85,0,z0],[side*1.85,4.2,z0],[side*1.85,4.2,z1],[side*1.85,0,z1]],th.wall);
- for(let z=Math.max(z0,2-travel);z<z1;z+=5){
-  poly([[side*1.84,.5,z],[side*1.84,3.6,z],[side*1.84,3.6,Math.min(z1,z+2.7)],[side*1.84,.5,Math.min(z1,z+2.7)]],shade(th.wall,-.3));
+ for(let z=Math.max(z0,2-travel);z<z1;z+=14){
+  poly([[side*1.84,.5,z],[side*1.84,3.6,z],[side*1.84,3.6,Math.min(z1,z+2.7)],[side*1.84,.5,Math.min(z1,z+2.7)]],shade(th.wall,-.1));
   if([3,9].includes(i))poly([[side*1.82,.1,z],[side*1.70,2.8,z+.7],[side*1.83,3.7,Math.min(z1,z+2.7)],[side*1.82,.1,Math.min(z1,z+2.7)]],shade(th.wall,.17));
   if([1,7,11].includes(i))poly([[side*1.81,.3,z],[side*1.81,.48,z],[side*1.81,3.7,Math.min(z1,z+2.7)],[side*1.81,3.45,Math.min(z1,z+2.7)]],th.accent);
   if([4,6].includes(i))for(const yy of [1,2.8])poly([[side*1.80,yy,z],[side*1.80,yy+.12,z],[side*1.80,yy+.12,Math.min(z1,z+3.5)],[side*1.80,yy,Math.min(z1,z+3.5)]],th.accent);
   if([5,8,13].includes(i)){const v=proj(side*1.81,2,z);ctx.save();ctx.translate(v.x,v.y);ctx.strokeStyle=th.accent;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,18*v.s,90*v.s,0,0,7);ctx.stroke();ctx.restore();}
-  const v=proj(side*1.83,2,z);ctx.save();ctx.translate(v.x,v.y);ctx.scale(v.s*.5,v.s*.7);chapterMark(i,th.accent);ctx.restore();
+  const v=proj(side*1.83,2,z);ctx.save();ctx.translate(v.x,v.y);ctx.scale(v.s*.5,v.s*.7);chapterMark(i,shade(th.accent,-.35));ctx.restore();
  }
  }
  }
