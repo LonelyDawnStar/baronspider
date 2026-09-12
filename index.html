@@ -780,7 +780,7 @@ function heroPose(){
 }
 
 // --- 적 모델 ---
-function drawEnemy(o,s){return drawChapterEnemy(o,s);}
+function drawEnemy(o,s){if(R.issue===6)return drawEnemyLegacy({...o,bot:true},s);return drawChapterEnemy(o,s);}
 function drawEnemyLegacy(o,s){
   const k=o.kind; const t=R.t*6+ (o.z||0);
   const bot=!!o.bot; // 울트론 센트리 — 규칙은 같고 외형만 기계
@@ -2007,24 +2007,15 @@ function drawChapterSurface(type,z0,z1){
  const i=R.issue,th=CHAPTER_STYLE[i],travel=(R.dist/2.2)%14;
  const poly=(pts,c)=>{ctx.beginPath();pts.forEach(([x,y,z],j)=>{const v=proj(x,y,z);j?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y);});ctx.closePath();ctx.fillStyle=c;ctx.fill();};
  const tile=(l,r,a,b,c)=>poly([[l,0,a],[r,0,a],[r,0,b],[l,0,b]],c);
+ if((i===6||i===8)&&type==='swing')drawGroundRangeLegacy(type,z0,z1,ISSUE_ENV_COLORS[i]);
  // Unbroken road: no checkerboard, repeated center emblems or cross-lane stripes.
  tile(-1.75,1.75,z0,z1,th.floor);
  for(const side of [-1,1])tile(side<0?-1.75:1.61,side<0?-1.61:1.75,z0,z1,shade(th.floor,.12));
  for(const x of [-.5,.5]){const a=proj(x,0,z0),b=proj(x,0,z1);ctx.strokeStyle='#ffffff30';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
- if(['swing','wall','fall'].includes(type)){
- for(const side of [-1,1]){
- poly([[side*1.85,0,z0],[side*1.85,4.2,z0],[side*1.85,4.2,z1],[side*1.85,0,z1]],th.wall);
- for(let z=Math.max(z0,2-travel);z<z1;z+=14){
-  poly([[side*1.84,.5,z],[side*1.84,3.6,z],[side*1.84,3.6,Math.min(z1,z+2.7)],[side*1.84,.5,Math.min(z1,z+2.7)]],shade(th.wall,-.1));
-  if([3,9].includes(i))poly([[side*1.82,.1,z],[side*1.70,2.8,z+.7],[side*1.83,3.7,Math.min(z1,z+2.7)],[side*1.82,.1,Math.min(z1,z+2.7)]],shade(th.wall,.17));
-  if([1,7,11].includes(i))poly([[side*1.81,.3,z],[side*1.81,.48,z],[side*1.81,3.7,Math.min(z1,z+2.7)],[side*1.81,3.45,Math.min(z1,z+2.7)]],th.accent);
-  if([4,6].includes(i))for(const yy of [1,2.8])poly([[side*1.80,yy,z],[side*1.80,yy+.12,z],[side*1.80,yy+.12,Math.min(z1,z+3.5)],[side*1.80,yy,Math.min(z1,z+3.5)]],th.accent);
-  if([5,8,13].includes(i)){const v=proj(side*1.81,2,z);ctx.save();ctx.translate(v.x,v.y);ctx.strokeStyle=th.accent;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,18*v.s,90*v.s,0,0,7);ctx.stroke();ctx.restore();}
-  const v=proj(side*1.83,2,z);ctx.save();ctx.translate(v.x,v.y);ctx.scale(v.s*.5,v.s*.7);chapterMark(i,shade(th.accent,-.35));ctx.restore();
- }
- }
- }
+
+ if(!((i===6||i===8)&&type==='swing'))drawChapterArchitecture(i,type,z0,z1);
 }
+
 function drawChapterObstacle(o,s){
  const th=CHAPTER_STYLE[R.issue],height=o.kind==='low'?40:o.kind==='high'?55:(R.seg==='wall'||R.seg==='fall'?110:170),top=o.kind==='high'?-150:-height;
  ctx.save();ctx.scale(s,s);ctx.fillStyle=th.wall;ctx.strokeStyle=INK;ctx.lineWidth=4;
@@ -2062,6 +2053,76 @@ function drawChapterEnemy(o,s){
  if(k==='armor'){ctx.fillStyle='#b8c5cb';ctx.strokeStyle=INK;ctx.lineWidth=3;ctx.fillRect(-42,-89,23,58);ctx.strokeRect(-42,-89,23,58);}
  if(k==='armed'){ctx.fillStyle='#c3bd94';ctx.fillRect(25,-67,27,9);}
  ctx.restore();
+}
+// Distinct architecture silhouettes; decorations remain outside the playable lanes.
+function drawChapterArchitecture(i,type,z0,z1){
+ const th=CHAPTER_STYLE[i],tall=['swing','wall','fall'].includes(type),h=tall?4.5:1.6;
+ const poly=(v,c)=>{ctx.beginPath();v.forEach(([x,y,z],j)=>{const p=proj(x,y,z);j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.closePath();ctx.fillStyle=c;ctx.fill();};
+ const line=(v,c,n=3)=>{ctx.beginPath();v.forEach(([x,y,z],j)=>{const p=proj(x,y,z);j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y);});ctx.strokeStyle=c;ctx.lineWidth=n;ctx.stroke();};
+ const box=(x,w,y,hh,z,len,c)=>poly([[x,y,z],[x+w,y,z],[x+w,y+hh,z],[x,y+hh,z]],c);
+ const travel=(R.dist/2.2)%12;
+ for(let z=36-travel;z>=z0;z-=12){
+ if(z>=z1||z<0)continue;const e=Math.min(z1,z+7);
+ for(const side of [-1,1]){
+ const x=side*2.15,outer=side*3.7;
+ switch(i){
+ case 0: // rooftop brick tenements, water tanks and green industrial vents
+ poly([[x,0,z],[outer,0,z],[outer,h,z],[x,h,z]],'#494140');
+ for(let y=.4;y<h;y+=1)box(Math.min(x,outer)+.15,.33,y,.48,z,0,'#b3936055');
+ line([[x,h,z],[outer,h,z]],'#766153',5);
+ box(x,.32,h,.7,z,0,'#47604a');line([[x+.16,h+.7,z],[x+.16,h+1,z]],'#879276',4);break;
+ case 1: // open airport gantries
+ line([[x,0,z],[x,h,z],[outer,h+.5,z]],'#8b9ca5',6);
+ line([[x,.3,z],[outer,h,z],[x,h,z],[outer,.3,z]],'#526a7a',3);
+ box(outer,.8,.5,.5,z,0,'#789198');break;
+ case 2:
+ line([[x,0,z],[x,h+.6,z]],'#575b6d',7);
+ for(const y of [h-.4,h+.2]){line([[x-.4,y,z],[x+.4,y,z]],'#a0a07a',3);line([[x,y,z],[x,y,e]],'#bfa661',2);}
+ box(x,.42,.1,.8,z,0,'#555b69');break;
+ case 3: // uneven canyon silhouettes
+ poly([[x,0,z],[outer,0,z],[outer,h+.6,z],[side*2.8,h+.1,z],[x,h*.65,z]],'#957b52');
+ poly([[x,0,z],[side*2.8,h+.1,z],[side*2.55,.5,z]],'#6a573e');break;
+ case 4: // pipes, drums, articulated machinery
+ for(const y of [.5,h-.3])line([[x,y,z],[x,y,e]],'#8faaa0',8);
+ const v=proj(x,h*.6,z);ctx.save();ctx.translate(v.x,v.y);ctx.scale(v.s,v.s);ctx.fillStyle='#405451';ctx.strokeStyle='#a8b9a5';ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,0,38,0,7);ctx.fill();ctx.stroke();ctx.restore();
+ line([[x,0,z],[side*2.7,h*.5,z],[x,h,z]],'#657a74',9);break;
+ case 5: // floating, separated illusion diamonds
+ poly([[x,.3,z],[side*2.8,h*.5,z],[x,h,z],[side*1.95,h*.5,z]],'#5d4278');
+ line([[x,.3,z],[side*1.95,h*.5,z],[x,h,z]],'#93c9b5',3);break;
+ case 6:
+ poly([[x,0,z],[outer,0,z],[outer,h,z],[x,h-.4,z]],'#2b414d');
+ line([[x,.2,z],[side*2.6,h-.2,z],[outer,h,z]],'#87a5b5',6);
+ for(const y of [.4,1.1])line([[x,y,z],[outer,y,z]],y===.4?'#9b4d48':'#4b99a8',3);break;
+ case 7: // stacked salvaged shipping containers
+ for(let j=0;j<(tall?3:1);j++){
+ box(Math.min(x,outer),1.7,.1+j*1.1,1,z,0,j%2?'#536965':'#847151');
+ for(let q=0;q<6;q++)line([[Math.min(x,outer)+q*.28,.2+j*1.1,z],[Math.min(x,outer)+q*.28,1+j*1.1,z]],'#303d3c',2);
+ }break;
+ case 8: // sweeping alien buttresses
+ poly([[x,0,z],[side*2.45,h*.6,z],[side*3.2,h+.7,z],[side*2.8,h*.4,z],[side*2.4,0,z]],'#957658');
+ line([[x,0,z],[side*2.45,h*.6,z],[side*3.2,h+.7,z]],'#d0b27b',4);break;
+ case 9: // broken battleground walls, angled debris
+ poly([[x,0,z],[outer,0,z],[outer,h*.65,z],[side*2.9,h,z],[side*2.5,h*.6,z],[x,h*.8,z]],'#65545a');
+ line([[side*2.5,.1,z],[side*2.9,h+.7,z]],'#3a3942',7);break;
+ case 10: // canal edges, bridge arches
+ poly([[x,0,z],[outer,0,z],[outer,.1,e],[x,.1,e]],'#366e79');
+ line([[x,0,z],[x,h*.7,z],[side*2.45,h,z],[outer,h,z]],'#9caaa2',7);
+ for(let q=0;q<3;q++)box(side*(2.7+q*.3),.16,.1,.6,z,0,'#97a99d');break;
+ case 11: // exposed scaffolding
+ line([[x,0,z],[x,h,z],[outer,h,z],[outer,0,z]],'#8d9587',5);
+ line([[x,0,z],[outer,h,z],[x,h,z],[outer,0,z]],'#65756d',3);
+ for(const y of [.6,h*.65])line([[x,y,z],[outer,y,z]],'#b2a685',4);break;
+ case 12: // street facades, external fire stairs and awnings
+ poly([[x,0,z],[outer,0,z],[outer,h,z],[x,h,z]],'#796a60');
+ for(let y=.6;y<h;y+=1){box(Math.min(x,outer)+.2,.5,y,.6,z,0,'#303c47');line([[x,y,z],[side*2,y,z],[side*2,y+.9,z]],'#ac9b84',3);}
+ poly([[x,.7,z],[side*1.95,.8,z],[side*1.95,.8,e],[x,.7,e]],'#5b746e');break;
+ case 13: // hovering monoliths and circular time gates
+ poly([[x,.5,z],[side*2.7,.8,z],[side*2.7,h+.2,z],[x,h,z]],'#595074');
+ line([[x,.5,z],[x,h,z],[side*2.7,h+.2,z]],'#83c5ce',3);
+ const g=proj(x,h*.6,z);ctx.strokeStyle='#6ea9c4';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(g.x,g.y,25*g.s,65*g.s,.3*side,0,7);ctx.stroke();break;
+ }
+ }
+ }
 }
 </script><script>
 // ===== 상태 / 저장 =====
@@ -2857,7 +2918,7 @@ function codeTable(kind){return `<div class="tbl"><table>${Object.entries(CODES)
 function bindCodes(kind){$('#codeForm').onsubmit=e=>{e.preventDefault();redeem($('#codeIn').value,kind);};$('#dlg').querySelectorAll('.codebtn').forEach(b=>b.onclick=()=>{redeem(b.dataset.code,kind);});}
 $('#bCode').onclick=()=>{const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>쿠폰</h3>${codeFields()}<details class="fold"><summary>쿠폰 목록</summary>${codeTable('coupon')}</details><button class="btn sm ghost" id="dClose">닫기</button></div>`;d.showModal();bindCodes('coupon');$('#dClose').onclick=()=>d.close();};
 $('#bSettings').onclick=()=>{
- const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.26</h3>
+ const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.27</h3>
  <div class="sub-h">사운드</div><div class="actions"><label><input type="checkbox" id="setBgm" ${MUSIC.on?'checked':''}> BGM</label><label><input type="checkbox" id="setSfx" ${SFX.on?'checked':''}> 효과음</label><label><input type="checkbox" id="setVoice" ${VOICE.on?'checked':''}> 보스 보이스</label></div>
  <label>배경음악 <select id="musicMode" style="width:100%;padding:10px;margin:8px 0">${[['auto','챕터에 맞춰 자동 변경',true],['main','기본 BGM 고정',true],['ultron','에이지 오브 울트론 고정',issueUnlocked(6)],['homecoming','홈커밍 고정',issueUnlocked(7)],['infinity','인피니티 워 고정',issueUnlocked(8)],['endgame','엔드게임 고정',issueUnlocked(9)]].map(([k,n,ok])=>`<option value="${k}" ${MUSIC.mode===k?'selected':''} ${ok?'':'disabled'}>${n}${ok?'':' — 챕터 해금 필요'}</option>`).join('')}</select></label>
   <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="checkbox" id="ttsChk" ${VOICE.tts?'checked':''}> 보스 음성 대사(브라우저 TTS) 사용 — 기기에 <b>남성 한국어 음성</b>이 있을 때만 재생됩니다 (현재: ${VOICE.maleVoice()?'감지됨: '+VOICE.maleVoice().name:'남성 음성 없음 → 말풍선만 표시'})</label>
