@@ -636,7 +636,7 @@ function draw(){
   if(ROLL){ ctx.translate(W/2,H*0.7); ctx.rotate(ROLL); ctx.translate(-W/2,-H*0.7); }
   drawEnv(R.issue,R.bgOff,R.seg);
   if(R.seg==='fall'){ // 낙하: 아래로 보이는 거리(소실점) + 중심에서 퍼지는 바람 선
-    { const sg=ctx.createRadialGradient(W/2,HOR,0,W/2,HOR,W*0.6); sg.addColorStop(0,'#2a2a3a'); sg.addColorStop(0.25,'#0d0f1c'); sg.addColorStop(1,'#0a0c22'); ctx.fillStyle=sg; ctx.fillRect(0,0,W,HOR+G*0.35);
+    { const sg=ctx.createRadialGradient(W/2,HOR,0,W/2,HOR,W*0.6); sg.addColorStop(0,CHAPTER_STYLE[R.issue].wall); sg.addColorStop(0.25,'#0d0f1c'); sg.addColorStop(1,CHAPTER_STYLE[R.issue].floor); ctx.fillStyle=sg; ctx.fillRect(0,0,W,HOR+G*0.35);
       ctx.strokeStyle='#ffffff10'; ctx.lineWidth=1; for(let i=0;i<12;i++){ const a=i*Math.PI/6; ctx.beginPath(); ctx.moveTo(W/2,HOR); ctx.lineTo(W/2+Math.cos(a)*W,HOR+Math.sin(a)*W*0.5); ctx.stroke(); }
       ctx.fillStyle='#ffd23a'; for(let i=0;i<40;i++){ const a=i*2.4; const r=8+((i*37)%120); ctx.fillRect(W/2+Math.cos(a)*r,HOR+Math.sin(a)*r*0.5,2,2); } }
     ctx.save(); ctx.translate(W/2,HOR); ctx.strokeStyle='#ffffff33'; ctx.lineWidth=2; for(let i=0;i<16;i++){ const a=i*Math.PI/8+R.t*0.3; const r0=(R.bgOff*4+i*70)%500+40; ctx.beginPath(); ctx.moveTo(Math.cos(a)*r0,Math.sin(a)*r0*0.7); ctx.lineTo(Math.cos(a)*(r0+140),Math.sin(a)*(r0+140)*0.7); ctx.stroke(); } ctx.restore(); }
@@ -666,7 +666,7 @@ function draw(){
       case 'ring': ctx.strokeStyle='#f2b33d'; ctx.lineWidth=6*s; ctx.shadowColor='#f2b33d'; ctx.shadowBlur=0; ctx.beginPath(); ctx.arc(0,-(o.y?0:60)*s,52*s,0,7); ctx.stroke(); break;
       case 'proj': ctx.fillStyle='#ffd23d'; ctx.shadowColor='#ffd23d'; ctx.shadowBlur=0; ctx.beginPath(); ctx.arc(0,-26*s,9*s,0,7); ctx.fill(); break;
       case 'sign': drawSwingObstacle(o,lx,dz,p); break;
-      case 'obs': ctx.fillStyle='#7c8299'; if(o.kind==='low'){ctx.fillRect(-60*s,-40*s,120*s,40*s);ctx.fillStyle='#f2b33d';for(let i=0;i<4;i++)ctx.fillRect((-60+i*30)*s,-40*s,15*s,40*s);} else if(o.kind==='high'){ctx.fillRect(-64*s,-150*s,128*s,55*s);ctx.fillStyle='#3a4160';ctx.fillRect(-64*s,-95*s,10*s,95*s);ctx.fillRect(54*s,-95*s,10*s,95*s);} else {const wh=R.seg==='wall'||R.seg==='fall'?110:170;ctx.fillStyle=R.seg==='wall'||R.seg==='fall'?'#2fd3e688':'#5c6180';ctx.fillRect(-62*s,-wh*s,124*s,wh*s);ctx.strokeStyle='#d8262c';ctx.lineWidth=5*s;ctx.strokeRect(-62*s,-wh*s,124*s,wh*s);ctx.beginPath();ctx.moveTo(-50*s,-wh*s+12*s);ctx.lineTo(50*s,-12*s);ctx.moveTo(50*s,-wh*s+12*s);ctx.lineTo(-50*s,-12*s);ctx.stroke();} break;
+      case 'obs': drawChapterObstacle(o,s);break;
       case 'enemy': { const k=o.kind; const c1=k==='armor'?'#8fa3bf':k==='fly'?'#b26df0':k==='armed'?'#f2b33d':'#ff5a5f'; const hy=k==='fly'?70:0; drawEnemy(o,s); ctx.fillStyle='#000a'; ctx.font=`600 ${14*s}px ${canvasFont('--body')}`; ctx.textAlign='center'; const lab={std:'일반',armed:'무장 ▲▼',armor:'장갑 ▼',fly:'비행 ▲',minion:'미니언 ▲▼',sentry:'센트리 ▲▼'}[k]; ctx.lineWidth=3*s; ctx.strokeStyle=INK; ctx.strokeText(lab,0,-(hy+135)*s); ctx.fillStyle='#fff'; ctx.fillText(lab,0,-(hy+135)*s); break; }
     }
     ctx.restore(); }
@@ -791,7 +791,7 @@ function codeTable(kind){return `<div class="tbl"><table>${Object.entries(CODES)
 function bindCodes(kind){$('#codeForm').onsubmit=e=>{e.preventDefault();redeem($('#codeIn').value,kind);};$('#dlg').querySelectorAll('.codebtn').forEach(b=>b.onclick=()=>{redeem(b.dataset.code,kind);});}
 $('#bCode').onclick=()=>{const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>쿠폰</h3>${codeFields()}<details class="fold"><summary>쿠폰 목록</summary>${codeTable('coupon')}</details><button class="btn sm ghost" id="dClose">닫기</button></div>`;d.showModal();bindCodes('coupon');$('#dClose').onclick=()=>d.close();};
 $('#bSettings').onclick=()=>{
- const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.24</h3>
+ const d=$('#dlg');d.innerHTML=`<div class="dlg"><h3>설정 · 0.25</h3>
  <div class="sub-h">사운드</div><div class="actions"><label><input type="checkbox" id="setBgm" ${MUSIC.on?'checked':''}> BGM</label><label><input type="checkbox" id="setSfx" ${SFX.on?'checked':''}> 효과음</label><label><input type="checkbox" id="setVoice" ${VOICE.on?'checked':''}> 보스 보이스</label></div>
  <label>배경음악 <select id="musicMode" style="width:100%;padding:10px;margin:8px 0">${[['auto','챕터에 맞춰 자동 변경',true],['main','기본 BGM 고정',true],['ultron','에이지 오브 울트론 고정',issueUnlocked(6)],['homecoming','홈커밍 고정',issueUnlocked(7)],['infinity','인피니티 워 고정',issueUnlocked(8)],['endgame','엔드게임 고정',issueUnlocked(9)]].map(([k,n,ok])=>`<option value="${k}" ${MUSIC.mode===k?'selected':''} ${ok?'':'disabled'}>${n}${ok?'':' — 챕터 해금 필요'}</option>`).join('')}</select></label>
   <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="checkbox" id="ttsChk" ${VOICE.tts?'checked':''}> 보스 음성 대사(브라우저 TTS) 사용 — 기기에 <b>남성 한국어 음성</b>이 있을 때만 재생됩니다 (현재: ${VOICE.maleVoice()?'감지됨: '+VOICE.maleVoice().name:'남성 음성 없음 → 말풍선만 표시'})</label>

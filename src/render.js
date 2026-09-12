@@ -83,7 +83,8 @@ function heroPose(){
 }
 
 // --- 적 모델 ---
-function drawEnemy(o,s){
+function drawEnemy(o,s){return drawChapterEnemy(o,s);}
+function drawEnemyLegacy(o,s){
   const k=o.kind; const t=R.t*6+ (o.z||0);
   const bot=!!o.bot; // 울트론 센트리 — 규칙은 같고 외형만 기계
   const col=bot?({std:['#8ea6c4','#2a3446'],armed:['#c9821f','#3a2a12'],armor:['#aab6c6','#242c3a'],fly:['#2fd3e6','#123a44'],minion:['#8ea6c4','#2a3446'],sentry:['#8ea6c4','#2a3446']}[k]||['#8ea6c4','#2a3446'])
@@ -830,7 +831,9 @@ function drawEnv(issue,off,seg){
 }
 
 // --- 지면/협곡 구간 렌더 (z 범위) ---
-function drawGroundRange(type,z0,z1,col){
+function drawGroundRange(type,z0,z1,col){return drawChapterSurface(type,z0,z1);
+}
+function drawGroundRangeLegacy(type,z0,z1,col){
   const q=(xl,xr,zz0,zz1,fill)=>{ const a=proj(xl,0,zz0),b=proj(xr,0,zz0),c=proj(xr,0,zz1),d=proj(xl,0,zz1); ctx.fillStyle=fill; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill(); };
   if(type==='swing'&&(R.issue===6||R.issue===8||R.issue===9)){
     const alien=R.issue>=8;
@@ -922,19 +925,24 @@ function drawBoundary(cur,nxt,b){
 }
 // 스윙 구간 장애물 모델 (빌보드 / 크레인 빔)
 function drawSwingObstacle(o,lx,dz,p){
+ const th=CHAPTER_STYLE[R.issue];ctx.save();
+ drawSwingObstacleLegacy(o,lx,dz,p);
+ const yy=(proj(lx,o.band[1],dz).y-p.y);ctx.translate(0,yy+15*p.s);ctx.scale(.35*p.s,.35*p.s);chapterMark(R.issue,th.accent);ctx.restore();
+}
+function drawSwingObstacleLegacy(o,lx,dz,p){
   const [a,b]=o.band; const s=p.s;
   if(o.kind==='crane'){ const x0=o.lanes[0]-1,x1=o.lanes[1]-1; const yb=(a+b)/2; const p1=proj(x0-0.45,yb,dz),p2=proj(x1+0.45,yb,dz); const th=Math.max(6,(proj(0,b,dz).y-proj(0,a,dz).y)*-0.5);
     ctx.save(); ctx.translate(-p.x,-p.y); // 절대 좌표로
-    ctx.strokeStyle=INK; ctx.lineWidth=th+8; ctx.lineCap='butt'; ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke(); ctx.strokeStyle='#f6b32b'; ctx.lineWidth=th; ctx.stroke();
+    ctx.strokeStyle=INK; ctx.lineWidth=th+8; ctx.lineCap='butt'; ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke(); ctx.strokeStyle=CHAPTER_STYLE[R.issue].accent; ctx.lineWidth=th; ctx.stroke();
     ctx.strokeStyle=INK; ctx.lineWidth=3; const n=8; for(let i=0;i<=n;i++){ const x=p1.x+(p2.x-p1.x)*i/n; ctx.beginPath(); ctx.moveTo(x,p1.y-th/2); ctx.lineTo(x+(i%2?th:-th)*0.6,p1.y+th/2); ctx.stroke(); }
     const hookX=(p1.x+p2.x)/2; ctx.beginPath(); ctx.moveTo(hookX,p1.y+th/2); ctx.lineTo(hookX,p1.y+th/2+40*s); ctx.stroke(); ctx.strokeStyle=INK; ctx.lineWidth=6; ctx.beginPath(); ctx.arc(hookX,p1.y+th/2+52*s,12*s,-Math.PI/2,Math.PI*0.9); ctx.stroke();
     ctx.font=`900 ${Math.max(10,22*s)}px sans-serif`; ctx.fillStyle=INK; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(b>3?'↓ 아래로':'↑ 위로',hookX,p1.y); ctx.restore(); return; }
   const top=proj(lx,b,dz).y-p.y, bot=proj(lx,a,dz).y-p.y; const w=150*s;
   // 기둥
-  ctx.strokeStyle=INK; ctx.lineWidth=10*s+2; ctx.beginPath(); ctx.moveTo(-w*0.35,bot); ctx.lineTo(-w*0.35,bot+60*s); ctx.moveTo(w*0.35,bot); ctx.lineTo(w*0.35,bot+60*s); ctx.stroke(); ctx.strokeStyle='#7c8299'; ctx.lineWidth=6*s; ctx.stroke();
+  ctx.strokeStyle=INK; ctx.lineWidth=10*s+2; ctx.beginPath(); ctx.moveTo(-w*0.35,bot); ctx.lineTo(-w*0.35,bot+60*s); ctx.moveTo(w*0.35,bot); ctx.lineTo(w*0.35,bot+60*s); ctx.stroke(); ctx.strokeStyle=CHAPTER_STYLE[R.issue].wall; ctx.lineWidth=6*s; ctx.stroke();
   // 보드
-  ctx.fillStyle=INK; ctx.fillRect(-w/2-6*s,top-6*s+8*s,w+12*s,(bot-top)+12*s); ctx.fillStyle='#d8262c'; ctx.fillRect(-w/2,top,w,bot-top); ctx.fillStyle='#fff'; ctx.fillRect(-w/2+10*s,top+10*s,w-20*s,(bot-top)-20*s);
-  ctx.fillStyle='#d8262c'; ctx.font=`900 ${Math.max(9,Math.min(30*s,(bot-top)*0.4))}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(b>3?'↓ 아래로':'↑ 위로',0,(top+bot)/2);
+  ctx.fillStyle=INK; ctx.fillRect(-w/2-6*s,top-6*s+8*s,w+12*s,(bot-top)+12*s); ctx.fillStyle=CHAPTER_STYLE[R.issue].accent; ctx.fillRect(-w/2,top,w,bot-top); ctx.fillStyle='#fff'; ctx.fillRect(-w/2+10*s,top+10*s,w-20*s,(bot-top)-20*s);
+  ctx.fillStyle=CHAPTER_STYLE[R.issue].accent; ctx.font=`900 ${Math.max(9,Math.min(30*s,(bot-top)*0.4))}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(b>3?'↓ 아래로':'↑ 위로',0,(top+bot)/2);
   // 조명
   ctx.fillStyle='#ffd23a'; ctx.strokeStyle=INK; ctx.lineWidth=2; for(const x of[-w*0.3,0,w*0.3]){ ctx.beginPath(); ctx.arc(x,top-4*s,6*s,0,7); ctx.fill(); ctx.stroke(); }
 }
@@ -1260,5 +1268,109 @@ function drawKangBoss(b,t){
  for(const s of [-1,1])ln([[s*19,-189],[s*20,-173],[s*13,-159]],'#97e8ee',2);
  p([[-28,-145],[-40,-166],[-36,-176],[-19,-155]],'#655981');p([[28,-145],[40,-166],[36,-176],[19,-155]],'#655981');
  }
+ ctx.restore();
+}
+
+// 0.25: bounded geometry, chapter-wide materials and silhouette motifs.
+const CHAPTER_STYLE=[
+ ['GOBLIN / CHEMICAL ROOFTOPS','#343c35','#414b47','#96c65a','고블린 갱단'],
+ ['VULTURE / AIR TERMINAL','#303f4d','#607787','#b5d8df','비행 강습대'],
+ ['ELECTRO / POWER GRID','#242d43','#404559','#f0d559','전력 경비병'],
+ ['SAND / QUARRY','#786346','#a18459','#e4c591','모래 병사'],
+ ['OCTOPUS / MACHINE WORKS','#334246','#52635f','#9dbb87','촉수 드론병'],
+ ['MYSTERIO / ILLUSION','#35344a','#584568','#92dbbe','환영 병사'],
+ ['ULTRON / MACHINE CITY','#293840','#45545e','#6ecfda','울트론 센트리'],
+ ['HOMECOMING / SALVAGE','#514c3d','#706755','#d7b56f','회수반 용병'],
+ ['INFINITY / Q-SHIP','#3b3046','#66516b','#d4a872','침공 병사'],
+ ['ENDGAME / RUINS','#49404a','#69575c','#d0a278','전장 돌격병'],
+ ['FAR FROM HOME / CANALS','#35545a','#698084','#79dec5','홀로그램 드론병'],
+ ['NO WAY HOME / SCAFFOLD','#39454d','#66736d','#b5a0dc','차원 균열 병사'],
+ ['BRAND NEW DAY / CITY','#454144','#73695d','#cb9aba','장갑 갱단'],
+ ['KANG / CHRONOPOLIS','#303851','#534b72','#80dce5','시간 군단']
+].map(([name,floor,wall,accent,enemy])=>({name,floor,wall,accent,enemy}));
+function chapterMark(i,c){
+ ctx.strokeStyle=c;ctx.fillStyle=c;ctx.lineWidth=3;ctx.beginPath();
+ switch(i){
+ case 0:ctx.roundRect(-13,-15,26,30,5);ctx.stroke();ctx.fillRect(-7,-4,14,6);break;
+ case 1:ctx.moveTo(-30,12);ctx.lineTo(0,-12);ctx.lineTo(30,12);ctx.lineTo(0,3);ctx.closePath();ctx.stroke();break;
+ case 2:ctx.moveTo(8,-22);ctx.lineTo(-12,3);ctx.lineTo(2,3);ctx.lineTo(-7,23);ctx.lineTo(14,-4);ctx.lineTo(1,-4);ctx.closePath();ctx.fill();break;
+ case 3:case 9:ctx.moveTo(-22,15);ctx.lineTo(-9,-17);ctx.lineTo(9,-10);ctx.lineTo(22,14);ctx.closePath();ctx.stroke();ctx.moveTo(-9,-17);ctx.lineTo(1,7);ctx.lineTo(22,14);ctx.stroke();break;
+ case 4:for(let j=0;j<4;j++){ctx.moveTo(0,0);ctx.quadraticCurveTo((j%2?1:-1)*30,-20+j*12,(j%2?1:-1)*24,20-j*10);}ctx.stroke();break;
+ case 5:ctx.moveTo(-27,0);ctx.quadraticCurveTo(0,-24,27,0);ctx.quadraticCurveTo(0,24,-27,0);ctx.stroke();ctx.beginPath();ctx.arc(0,0,7,0,7);ctx.stroke();break;
+ case 6:ctx.rect(-18,-19,36,38);ctx.stroke();ctx.fillRect(-12,-8,8,4);ctx.fillRect(4,-8,8,4);ctx.fillRect(-8,9,16,3);break;
+ case 7:ctx.rect(-24,-15,48,30);ctx.stroke();for(let x=-16;x<=16;x+=8){ctx.moveTo(x,-15);ctx.lineTo(x,15);}ctx.stroke();break;
+ case 8:ctx.ellipse(0,0,23,29,0,0,7);ctx.stroke();ctx.beginPath();ctx.ellipse(0,0,11,18,0,0,7);ctx.stroke();break;
+ case 10:for(let y=-10;y<=10;y+=10){ctx.moveTo(-26,y);ctx.bezierCurveTo(-10,y-12,10,y+12,26,y);}ctx.stroke();break;
+ case 11:ctx.rect(-24,-23,48,46);ctx.moveTo(-24,-23);ctx.lineTo(24,23);ctx.moveTo(24,-23);ctx.lineTo(-24,23);ctx.stroke();break;
+ case 12:ctx.moveTo(-23,15);ctx.lineTo(-23,-15);ctx.lineTo(0,-23);ctx.lineTo(23,-15);ctx.lineTo(23,15);ctx.closePath();ctx.stroke();ctx.fillRect(-12,-5,24,5);break;
+ case 13:ctx.arc(0,0,24,0,7);ctx.moveTo(0,-19);ctx.lineTo(0,0);ctx.lineTo(14,8);ctx.stroke();break;
+ }
+}
+function drawChapterSurface(type,z0,z1){
+ const i=R.issue,th=CHAPTER_STYLE[i],travel=(R.dist/2.2)%4;
+ const poly=(pts,c)=>{ctx.beginPath();pts.forEach(([x,y,z],j)=>{const v=proj(x,y,z);j?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y);});ctx.closePath();ctx.fillStyle=c;ctx.fill();};
+ const tile=(l,r,a,b,c)=>poly([[l,0,a],[r,0,a],[r,0,b],[l,0,b]],c);
+ tile(-1.75,1.75,z0,z1,th.floor);
+ for(let z=-travel;z<z1;z+=4){const lo=Math.max(z0,z),hi=Math.min(z1,z+3.85);if(hi<=lo)continue;
+ for(const l of [-1,0,1]){
+  tile(l-.47,l+.47,lo,hi,shade(th.floor,((Math.floor(z/4)+l)%2)? .12:-.08));
+  const v=proj(l,0,(lo+hi)/2);ctx.save();ctx.translate(v.x,v.y);ctx.scale(v.s*.65,v.s*.23);chapterMark(i,shade(th.accent,-.3));ctx.restore();
+ }
+ // Material-specific seams, channels and cross beams.
+ if([1,4,6,7,11].includes(i))tile(-1.7,1.7,lo,Math.min(hi,lo+.22),th.wall);
+ if([2,8,13].includes(i))for(const l of [-1.55,1.55])tile(l-.035,l+.035,lo,hi,th.accent);
+ if(i===3||i===9)poly([[-1.6,0,lo],[-.7,0,lo+.3],[-.9,0,hi],[-1.1,0,lo+.5]],shade(th.floor,-.5));
+ }
+ for(const x of [-.5,.5]){const a=proj(x,0,z0),b=proj(x,0,z1);ctx.strokeStyle='#ffffff55';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+ if(['swing','wall','fall'].includes(type)){
+ for(const side of [-1,1]){
+ poly([[side*1.85,0,z0],[side*1.85,4.2,z0],[side*1.85,4.2,z1],[side*1.85,0,z1]],th.wall);
+ for(let z=Math.max(z0,2-travel);z<z1;z+=5){
+  poly([[side*1.84,.5,z],[side*1.84,3.6,z],[side*1.84,3.6,Math.min(z1,z+2.7)],[side*1.84,.5,Math.min(z1,z+2.7)]],shade(th.wall,-.3));
+  if([3,9].includes(i))poly([[side*1.82,.1,z],[side*1.70,2.8,z+.7],[side*1.83,3.7,Math.min(z1,z+2.7)],[side*1.82,.1,Math.min(z1,z+2.7)]],shade(th.wall,.17));
+  if([1,7,11].includes(i))poly([[side*1.81,.3,z],[side*1.81,.48,z],[side*1.81,3.7,Math.min(z1,z+2.7)],[side*1.81,3.45,Math.min(z1,z+2.7)]],th.accent);
+  if([4,6].includes(i))for(const yy of [1,2.8])poly([[side*1.80,yy,z],[side*1.80,yy+.12,z],[side*1.80,yy+.12,Math.min(z1,z+3.5)],[side*1.80,yy,Math.min(z1,z+3.5)]],th.accent);
+  if([5,8,13].includes(i)){const v=proj(side*1.81,2,z);ctx.save();ctx.translate(v.x,v.y);ctx.strokeStyle=th.accent;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,0,18*v.s,90*v.s,0,0,7);ctx.stroke();ctx.restore();}
+  const v=proj(side*1.83,2,z);ctx.save();ctx.translate(v.x,v.y);ctx.scale(v.s*.5,v.s*.7);chapterMark(i,th.accent);ctx.restore();
+ }
+ }
+ }
+}
+function drawChapterObstacle(o,s){
+ const th=CHAPTER_STYLE[R.issue],height=o.kind==='low'?40:o.kind==='high'?55:(R.seg==='wall'||R.seg==='fall'?110:170),top=o.kind==='high'?-150:-height;
+ ctx.save();ctx.scale(s,s);ctx.fillStyle=th.wall;ctx.strokeStyle=INK;ctx.lineWidth=4;
+ ctx.fillRect(-60,top,120,height);ctx.strokeRect(-60,top,120,height);
+ if(o.kind==='high'){ctx.fillRect(-60,-95,10,95);ctx.fillRect(50,-95,10,95);}
+ ctx.save();ctx.translate(0,top+height/2);ctx.scale(.75,Math.min(1,height/55));chapterMark(R.issue,th.accent);ctx.restore();
+ ctx.fillStyle=th.accent;ctx.fillRect(-60,top,120,5);
+ // Collision silhouette remains unchanged; protrusions are inset decoration.
+ for(const x of [-51,51]){ctx.fillStyle='#dbe4df';ctx.fillRect(x-2,top+10,4,4);ctx.fillRect(x-2,top+height-14,4,4);}
+ ctx.restore();
+}
+function drawChapterEnemy(o,s){
+ const th=CHAPTER_STYLE[R.issue],i=R.issue,k=o.kind,t=R.t*4+(o.z||0);
+ const fly=k==='fly'||k==='sentry',y=fly?70:0;
+ ctx.save();ctx.scale(s,s);ctx.translate(0,-y);
+ const p=(a,c)=>inkPath(()=>a.forEach(([x,y],j)=>j?ctx.lineTo(x,y):ctx.moveTo(x,y)),c,2);
+ const wide=[3,9].includes(i)?1.18:1;ctx.scale(wide,1);
+ for(const side of [-1,1]){
+ p([[side*5,-45],[side*19,-45],[side*(21+Math.sin(t)*2),-4],[side*8,-4]],th.wall);
+ p([[side*20,-91],[side*32,-86],[side*39,-52],[side*26,-48]],th.wall);
+ }
+ p([[-22,-94],[22,-94],[19,-43],[-19,-43]],th.floor);
+ ctx.save();ctx.translate(0,-72);ctx.scale(.46,.46);chapterMark(i,th.accent);ctx.restore();
+ if([0,5].includes(i))p([[-21,-105],[0,-137],[21,-105],[14,-92],[-14,-92]],th.wall);
+ else if([6,8,13].includes(i))p([[-18,-122],[18,-122],[22,-110],[13,-94],[-13,-94],[-22,-110]],th.wall);
+ else if(i===3||i===9)p([[-21,-113],[-10,-128],[16,-122],[22,-104],[10,-94],[-16,-98]],th.wall);
+ else p([[-18,-121],[18,-121],[18,-97],[-18,-97]],th.wall);
+ ctx.fillStyle=th.accent;ctx.fillRect(-12,-111,24,4);
+ if(i===1||i===7||fly){p([[-23,-85],[-56,-106],[-47,-76],[-25,-64]],th.accent);p([[23,-85],[56,-106],[47,-76],[25,-64]],th.accent);}
+ if(i===4){ctx.strokeStyle=th.accent;ctx.lineWidth=5;for(const side of [-1,1]){ctx.beginPath();ctx.moveTo(side*20,-76);ctx.quadraticCurveTo(side*57,-90,side*47,-35);ctx.stroke();}}
+ if(i===2){ctx.strokeStyle=th.accent;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-23,-122);ctx.lineTo(-29,-135);ctx.moveTo(23,-122);ctx.lineTo(29,-135);ctx.stroke();}
+ if(i===10){ctx.strokeStyle=th.accent;ctx.lineWidth=2;ctx.strokeRect(-28,-128,56,90);}
+ if(i===11){ctx.strokeStyle=th.accent;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-18,-94);ctx.lineTo(18,-45);ctx.moveTo(18,-94);ctx.lineTo(-18,-45);ctx.stroke();}
+ if(i===12){ctx.fillStyle=th.accent;ctx.fillRect(-26,-95,52,12);}
+ if(k==='armor'){ctx.fillStyle='#b8c5cb';ctx.strokeStyle=INK;ctx.lineWidth=3;ctx.fillRect(-42,-89,23,58);ctx.strokeRect(-42,-89,23,58);}
+ if(k==='armed'){ctx.fillStyle='#c3bd94';ctx.fillRect(25,-67,27,9);}
  ctx.restore();
 }
